@@ -235,6 +235,7 @@ fun RegisterContent(
                     value = password,
                     onValueChange = onPasswordChange,
                     label = "Password",
+                    isPassword = true,
                     visualTransformation = PasswordVisualTransformation()
                 )
 
@@ -244,6 +245,7 @@ fun RegisterContent(
                     value = confirmPassword,
                     onValueChange = onConfirmPasswordChange,
                     label = "Confirm Password",
+                    isPassword = true,
                     visualTransformation = PasswordVisualTransformation()
                 )
 
