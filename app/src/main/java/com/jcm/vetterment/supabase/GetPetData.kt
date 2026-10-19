@@ -54,7 +54,9 @@ object GetPetData {
             created_by = currentUser.id,
 
             name = normalizedName,
-
+            nickname = pet.nickname
+                ?.trim()
+                ?.takeIf { it.isNotBlank() },
             species = normalizedSpecies,
 
             breed = pet.breed
@@ -205,6 +207,9 @@ object GetPetData {
             val updatedPet = pet.copy(
 
                 name = pet.name.trim(),
+                nickname = pet.nickname
+                    ?.trim()
+                    ?.takeIf { it.isNotBlank() },
                 species = pet.species.trim().uppercase(),
                 breed = pet.breed?.trim(),
                 sex = pet.sex.trim().uppercase(),

@@ -89,7 +89,7 @@ fun PetOwner_Dashboard(navController: NavController) {
         ownerName = profile?.full_name,
         isLoading = isLoading,
         errorMessage = errorMessage,
-        petCount = pets.size,
+        pets = pets,
         upcomingAppointments = upcomingAppointments,
         activeCases = activeCases,
         medications = medications
@@ -104,7 +104,7 @@ fun PetOwnerDashboardContent(
     ownerName: String?,
     isLoading: Boolean,
     errorMessage: String,
-    petCount: Int,
+    pets: List<Pet>,
     upcomingAppointments: List<Appointment>,
     activeCases: List<Pair<Case, Pet?>>,
     medications: List<Pair<Medication, Pet?>>

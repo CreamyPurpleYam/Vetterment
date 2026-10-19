@@ -9,6 +9,7 @@ data class Pet(
     val owner_id: String,
     val created_by: String? = null,
     val name: String,
+    val nickname: String? = null,
     val species: String,
     val breed: String? = null,
     val sex: String,
