@@ -8,6 +8,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import com.jcm.vetterment.ui.theme.DarkGreen
 import com.jcm.vetterment.ui.theme.MediumGreen
@@ -15,6 +16,15 @@ import com.jcm.vetterment.ui.theme.PrimaryGreen
 import com.jcm.vetterment.ui.theme.SecondaryTextGreen
 import com.jcm.vetterment.ui.theme.vettermentButtonColors
 import com.jcm.vetterment.ui.theme.vettermentTextFieldColors
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @Composable
 fun VettermentOutlinedTextField(
@@ -28,8 +38,11 @@ fun VettermentOutlinedTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     isError: Boolean = false,
     supportingText: (@Composable (() -> Unit))? = null,
-    trailingIcon: @Composable (() -> Unit)? = null
+    trailingIcon: @Composable (() -> Unit)? = null,
+    isPassword: Boolean = false
 ) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -37,14 +50,42 @@ fun VettermentOutlinedTextField(
         modifier = modifier,
         readOnly = readOnly,
         singleLine = singleLine,
-        visualTransformation = visualTransformation,
+        visualTransformation = if (isPassword && !passwordVisible) {
+            PasswordVisualTransformation()
+        } else if (isPassword) {
+            VisualTransformation.None
+        } else {
+            visualTransformation
+        },
         keyboardOptions = keyboardOptions,
         isError = isError,
         supportingText = supportingText,
-        trailingIcon = trailingIcon,
+        trailingIcon = if (isPassword) {
+            {
+                IconButton(
+                    onClick = { passwordVisible = !passwordVisible }
+                ) {
+                    Icon(
+                        imageVector = if (passwordVisible) {
+                            Icons.Filled.Visibility
+                        } else {
+                            Icons.Filled.VisibilityOff
+                        },
+                        contentDescription = if (passwordVisible) {
+                            "Hide password"
+                        } else {
+                            "Show password"
+                        }
+                    )
+                }
+            }
+        } else {
+            trailingIcon
+        },
         colors = vettermentTextFieldColors()
     )
 }
+
 @Composable
 fun VettermentButton(
     text: String,

@@ -202,6 +202,7 @@ fun LoginContent(
                     value = password,
                     onValueChange = onPasswordChange,
                     label = "Password",
+                    isPassword = true,
                     visualTransformation = PasswordVisualTransformation()
                 )
 
