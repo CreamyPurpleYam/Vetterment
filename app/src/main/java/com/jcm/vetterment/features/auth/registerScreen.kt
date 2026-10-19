@@ -4,12 +4,17 @@ import com.jcm.vetterment.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -150,107 +155,120 @@ fun RegisterScreen( //Logic Layer
     )
 }
 
+
 @Composable
 fun RegisterContent(
     fullName: String,
     email: String,
     password: String,
     confirmPassword: String,
-
     errorMessage: String,
-
     onFullNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
-
     onRegisterClick: () -> Unit,
     onLoginClick: () -> Unit
 ) {
-
-    Box(
-        modifier = Modifier.fillMaxSize()
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
     ) {
+        val headerHeight = maxHeight * 0.36f
 
-        // Background image
-        Image(
-            painter = painterResource(id = R.drawable.logo),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // Register form
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            // Adjust this depending on your background image
-            Spacer(modifier = Modifier.height(430.dp))
-
-            VettermentTitle("REGISTER")
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            if (errorMessage.isNotEmpty()) {
-                VettermentError(errorMessage)
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            VettermentOutlinedTextField(
-                value = fullName,
-                onValueChange = onFullNameChange,
-                label = "Full Name"
+            // BANNER IMAGE
+            Image(
+                painter = painterResource(id = R.drawable.logo),
+                contentDescription = "PetHub Background",
+                contentScale = ContentScale.FillWidth,
+                alignment = Alignment.TopCenter,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(headerHeight)
+                    .offset(y = (-120).dp)
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // REGISTRATION FORM
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .offset(y = (-80).dp)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            VettermentOutlinedTextField(
-                value = email,
-                onValueChange = onEmailChange,
-                label = "Email"
-            )
+                VettermentTitle("REGISTER")
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(15.dp))
 
-            VettermentOutlinedTextField(
-                value = password,
-                onValueChange = onPasswordChange,
-                label = "Password",
-                visualTransformation = PasswordVisualTransformation()
-            )
+                if (errorMessage.isNotEmpty()) {
+                    VettermentError(errorMessage)
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            VettermentOutlinedTextField(
-                value = confirmPassword,
-                onValueChange = onConfirmPasswordChange,
-                label = "Confirm Password",
-                visualTransformation = PasswordVisualTransformation()
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            VettermentButton(
-                text = "REGISTER",
-                onClick = onRegisterClick
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            VettermentBody(
-                text = "Already have an account? Login",
-                modifier = Modifier.clickable {
-                    onLoginClick()
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-            )
+
+                VettermentOutlinedTextField(
+                    value = fullName,
+                    onValueChange = onFullNameChange,
+                    label = "Full Name"
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                VettermentOutlinedTextField(
+                    value = email,
+                    onValueChange = onEmailChange,
+                    label = "Email"
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                VettermentOutlinedTextField(
+                    value = password,
+                    onValueChange = onPasswordChange,
+                    label = "Password",
+                    visualTransformation = PasswordVisualTransformation()
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                VettermentOutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = onConfirmPasswordChange,
+                    label = "Confirm Password",
+                    visualTransformation = PasswordVisualTransformation()
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                VettermentButton(
+                    text = "REGISTER",
+                    onClick = onRegisterClick
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                VettermentBody(
+                    text = "Already have an account? Login",
+                    modifier = Modifier.clickable {
+                        onLoginClick()
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
 }
+
 @Preview(showBackground = true) //Preview Layer
 @Composable
 fun RegisterPreview() {
