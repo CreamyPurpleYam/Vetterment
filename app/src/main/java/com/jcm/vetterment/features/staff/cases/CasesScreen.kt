@@ -213,9 +213,7 @@ fun CaseCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Column(modifier = Modifier.weight(1f)) {
-
                 Text(
                     text = case.case_type.lowercase()
                         .replaceFirstChar { it.uppercase() },

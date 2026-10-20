@@ -1,7 +1,6 @@
 package com.jcm.vetterment.navigation
 
 object AppointmentRoutes {
-
     const val Appointments = "appointments"
 
     const val AppointmentDetail = "appointment_detail/{appointmentId}"

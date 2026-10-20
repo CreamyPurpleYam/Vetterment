@@ -20,7 +20,6 @@ import com.jcm.vetterment.supabase.GetProfileData
 
 @Composable
 fun StaffListScreen(navController: NavController) {
-
     var staff by remember { mutableStateOf<List<Profile>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }

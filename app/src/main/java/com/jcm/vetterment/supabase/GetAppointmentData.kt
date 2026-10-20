@@ -7,13 +7,11 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
 
 object GetAppointmentData {
-
     // ─── Create ───────────────────────────────────────────────────────────────
 
     suspend fun createAppointment(
         appointment: Appointment
     ): Appointment? {
-
         if (appointment.pet_id.isBlank()) return null
         if (appointment.owner_id.isBlank()) return null
         if (appointment.appointment_date.isBlank()) return null
@@ -42,7 +40,6 @@ object GetAppointmentData {
     suspend fun getAppointmentById(
         appointmentId: String
     ): Appointment? {
-
         if (appointmentId.isBlank()) return null
 
         return try {
@@ -74,7 +71,6 @@ object GetAppointmentData {
     suspend fun getAppointmentsForOwner(
         ownerId: String
     ): List<Appointment> {
-
         if (ownerId.isBlank()) return emptyList()
 
         return try {
@@ -96,7 +92,6 @@ object GetAppointmentData {
     suspend fun confirmAppointment(
         appointmentId: String
     ): Boolean {
-
         val currentUser =
             SupabaseClient.client.auth.currentUserOrNull() ?: return false
 
@@ -137,7 +132,6 @@ object GetAppointmentData {
         appointmentId: String,
         notes: String? = null
     ): Boolean {
-
         return try {
             val update = buildMap<String, Any?> {
                 put("status", "CANCELLED")
@@ -202,7 +196,6 @@ object GetAppointmentData {
     suspend fun getLinkedCase(
         appointmentId: String
     ): Case? {
-
         val appointment = getAppointmentById(appointmentId)
             ?: return null
 

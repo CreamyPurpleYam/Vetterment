@@ -1,7 +1,6 @@
 package com.jcm.vetterment.features.staff.cases
 
 object CaseStages {
-
     val CONSULTATION = listOf(
         "QUEUED", "CALLED", "UNDER_EXAMINATION",
         "CONSULTATION", "COMPLETED"

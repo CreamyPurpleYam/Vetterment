@@ -18,7 +18,6 @@ fun DatePickerField(
     errorMessage: String = "",
     onValueChange: (String) -> Unit
 ) {
-
     var showDatePicker by remember { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState()
@@ -26,7 +25,6 @@ fun DatePickerField(
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
-
         OutlinedTextField(
             value = value,
             onValueChange = {},
@@ -50,7 +48,6 @@ fun DatePickerField(
     }
 
     if (showDatePicker) {
-
         DatePickerDialog(
             onDismissRequest = {
                 showDatePicker = false
@@ -59,7 +56,6 @@ fun DatePickerField(
             confirmButton = {
                 TextButton(
                     onClick = {
-
                         datePickerState.selectedDateMillis?.let { millis ->
 
                             val formatter = SimpleDateFormat(
@@ -101,7 +97,6 @@ fun TimePickerField(
     label: String,
     onValueChange: (String) -> Unit
 ) {
-
     var showTimePicker by remember { mutableStateOf(false) }
 
     val timePickerState = rememberTimePickerState()
@@ -109,7 +104,6 @@ fun TimePickerField(
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
-
         OutlinedTextField(
             value = value,
             onValueChange = {},
@@ -129,17 +123,14 @@ fun TimePickerField(
     }
 
     if (showTimePicker) {
-
         AlertDialog(
             onDismissRequest = {
                 showTimePicker = false
             },
 
             confirmButton = {
-
                 TextButton(
                     onClick = {
-
                         val formattedTime =
                             "%02d:%02d".format(
                                 timePickerState.hour,

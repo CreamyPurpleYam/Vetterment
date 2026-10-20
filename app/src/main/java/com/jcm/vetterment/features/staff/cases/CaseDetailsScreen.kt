@@ -381,7 +381,6 @@ private fun CaseDetailsBody(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-
         // ── Patient summary ───────────────────────────────────────────────
         if (pet != null) {
             Card(modifier = Modifier.fillMaxWidth()) {

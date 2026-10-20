@@ -97,7 +97,6 @@ fun SearchOwnerContent(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-
             OutlinedTextField(
                 value = searchText,
                 onValueChange = onSearchChange,

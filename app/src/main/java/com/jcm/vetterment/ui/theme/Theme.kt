@@ -17,21 +17,20 @@ import androidx.compose.ui.platform.LocalContext
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryGreen,
     onPrimary = White,
-
+    primaryContainer = PrimaryGreen,
+    onPrimaryContainer = White,
     secondary = ButtonGreen,
     onSecondary = Black,
-
     tertiary = PrimaryGreen
 )
 
 private val LightColorScheme = lightColorScheme(
-
     primary = PrimaryGreen,
     onPrimary = White,
-
+    primaryContainer = PrimaryGreen,
+    onPrimaryContainer = White,
     secondary = ButtonGreen,
     onSecondary = Black,
-
     tertiary = PrimaryGreen
 )
 
@@ -39,7 +38,7 @@ private val LightColorScheme = lightColorScheme(
 fun VettermentTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -47,7 +46,6 @@ fun VettermentTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
@@ -58,17 +56,22 @@ fun VettermentTheme(
         content = content
     )
 }
+
 @Composable
 fun vettermentTextFieldColors() = OutlinedTextFieldDefaults.colors(
-
+    focusedTextColor = Color(0xFF1B1B1B),
+    unfocusedTextColor = Color(0xFF1B1B1B),
     focusedBorderColor = PrimaryGreen,
     unfocusedBorderColor = DarkGreen,
-
     focusedLabelColor = PrimaryGreen,
-    focusedTextColor = DarkGreen,
     unfocusedLabelColor = DarkGreen,
-    cursorColor = PrimaryGreen
+    cursorColor = PrimaryGreen,
+    focusedTrailingIconColor = DarkGreen,
+    unfocusedTrailingIconColor = DarkGreen,
+    focusedPlaceholderColor = Color(0xFF757575),
+    unfocusedPlaceholderColor = Color(0xFF757575)
 )
+
 @Composable
 fun vettermentButtonColors() = ButtonDefaults.buttonColors(
     containerColor = PrimaryGreen,

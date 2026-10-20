@@ -75,7 +75,8 @@ fun VettermentOutlinedTextField(
                             "Hide password"
                         } else {
                             "Show password"
-                        }
+                        },
+                        tint = DarkGreen
                     )
                 }
             }
@@ -116,6 +117,7 @@ fun VettermentTitle(
         color = PrimaryGreen
     )
 }
+
 @Composable
 fun VettermentSectionTitle(
     text: String,
@@ -128,6 +130,7 @@ fun VettermentSectionTitle(
         color = DarkGreen
     )
 }
+
 @Composable
 fun VettermentBody(
     text: String,
@@ -140,6 +143,7 @@ fun VettermentBody(
         color = MediumGreen
     )
 }
+
 @Composable
 fun VettermentSecondary(
     text: String,
@@ -152,6 +156,7 @@ fun VettermentSecondary(
         color = SecondaryTextGreen
     )
 }
+
 @Composable
 fun VettermentError(//ERROR TEXTS
     text: String,

@@ -134,7 +134,6 @@ private fun PetDetailsBody(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-
         // Species icon + name header
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(

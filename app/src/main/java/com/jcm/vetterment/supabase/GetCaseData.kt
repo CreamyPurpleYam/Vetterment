@@ -8,7 +8,6 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
 
 object GetCaseData {
-
     // ─── Create ─────────────────────────────────────────────────────────────    // ─── Read ────────────────────────────────────────────────────────────────
 
     suspend fun createCase(
@@ -16,7 +15,6 @@ object GetCaseData {
         caseType: String,
         appointmentId: String? = null
     ): Case? {
-
         if (petId.isBlank()) return null
 
         val normalizedType = caseType.trim().uppercase()
@@ -65,7 +63,6 @@ object GetCaseData {
     suspend fun createFollowUpCase(
         previousCase: Case
     ): Case? {
-
         if (previousCase.id == null) return null
         if (previousCase.current_status !in listOf("COMPLETED", "DISCHARGED")) return null
 
@@ -113,7 +110,6 @@ object GetCaseData {
     suspend fun getCaseById(
         caseId: String
     ): Case? {
-
         if (caseId.isBlank()) return null
 
         return try {
@@ -132,7 +128,6 @@ object GetCaseData {
     suspend fun getCasesForPet(
         petId: String
     ): List<Case> {
-
         if (petId.isBlank()) return emptyList()
 
         return try {
@@ -166,7 +161,6 @@ object GetCaseData {
     suspend fun getProgressForCase(
         caseId: String
     ): List<CaseProgress> {
-
         if (caseId.isBlank()) return emptyList()
 
         return try {
@@ -234,7 +228,6 @@ object GetCaseData {
         expectedDischargeDate: String? = null,
         actualDischargeDate: String? = null
     ): Boolean {
-
         if (caseId.isBlank()) return false
 
         val updates = buildMap<String, Any?> {
@@ -264,12 +257,10 @@ object GetCaseData {
     }
 
     suspend fun claimCase(caseId: String): Case? {
-
         val user = SupabaseClient.client.auth.currentUserOrNull()
             ?: return null
 
         return try {
-
             SupabaseClient.client
                 .from("cases")
                 .update(

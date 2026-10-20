@@ -40,7 +40,6 @@ fun appNavigation() {
         navController = navController,
         startDestination = "login"
     ) {
-
         // ── Auth ──────────────────────────────────────────────────────────────
         composable("login") {
             LoginScreen(navController)

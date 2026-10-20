@@ -1,7 +1,6 @@
 package com.jcm.vetterment.navigation
 
 object PetOwnerRoutes {
-
     // Bottom-nav destinations.
     // "Dashboard" reuses the existing "pet_owner" route so the post-login
     // role redirect (pet_owner -> PetOwner_Dashboard) keeps working as-is.

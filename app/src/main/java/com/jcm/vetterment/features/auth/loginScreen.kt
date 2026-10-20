@@ -46,7 +46,6 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
 
-
 @Composable //Logic layer
 fun LoginScreen(navController: NavController)
 {
@@ -85,7 +84,6 @@ fun LoginScreen(navController: NavController)
                             }
                             val role = GetProfileData.getCurrentRole()
                             when(role) {
-
                                 "pet_owner" -> {
                                     navController.navigate("pet_owner") {
                                         popUpTo("login") {
@@ -148,7 +146,6 @@ fun LoginContent(
     onLoginClick: () -> Unit,
     onRegisterClick: () -> Unit
 ) {
-
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -226,15 +223,11 @@ fun LoginContent(
             }
         }
     }
-
 }
-
-
 
 @Preview(showBackground = true) //Preview UI
 @Composable
 fun LoginPreview() {
-
     LoginContent(
         email = "",
         password = "",

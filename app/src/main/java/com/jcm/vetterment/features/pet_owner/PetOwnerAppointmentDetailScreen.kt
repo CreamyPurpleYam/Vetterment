@@ -170,7 +170,6 @@ private fun PetOwnerAppointmentDetailBody(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-
         // ── Status chip ───────────────────────────────────────────────────
         Row(
             modifier = Modifier.fillMaxWidth(),

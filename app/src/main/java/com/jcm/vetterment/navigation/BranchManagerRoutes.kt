@@ -1,7 +1,6 @@
 package com.jcm.vetterment.navigation
 
 object BranchManagerRoutes {
-
     const val Dashboard = "branch_manager_dashboard"
 
     const val StaffList = "branch_manager_staff_list"

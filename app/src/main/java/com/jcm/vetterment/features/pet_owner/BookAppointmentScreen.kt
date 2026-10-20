@@ -24,7 +24,6 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun BookAppointmentScreen(navController: NavController) {
-
     var pets by remember { mutableStateOf<List<Pet>>(emptyList()) }
     var ownerId by remember { mutableStateOf("") }
     var isLoadingPets by remember { mutableStateOf(true) }

@@ -7,7 +7,6 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 
 object GetProfileData {
-
     suspend fun getCurrentProfile(): Profile? {
         val user = SupabaseClient.client.auth.currentUserOrNull() ?: return null
         return try {
@@ -107,7 +106,6 @@ object GetProfileData {
         password: String,
         role: String
     ): String? {
-
         val normalizedRole = role.trim().lowercase()
         if (normalizedRole !in listOf("vet", "nurse", "assistant_vet")) return null
 

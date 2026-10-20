@@ -19,7 +19,6 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun PetOwnerProfileScreen(navController: NavController) {
-
     var profile by remember { mutableStateOf<Profile?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
