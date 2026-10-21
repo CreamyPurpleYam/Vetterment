@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 
 import androidx.compose.ui.text.input.KeyboardType
 
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 
 import androidx.compose.ui.unit.dp
@@ -56,9 +57,13 @@ import androidx.navigation.NavController
 
 import com.jcm.vetterment.features.data_models.Appointment
 
+import com.jcm.vetterment.features.data_models.Case
+
 import com.jcm.vetterment.features.data_models.Medication
 
 import com.jcm.vetterment.features.data_models.Pet
+
+import com.jcm.vetterment.features.staff.cases.CaseStages
 
 import com.jcm.vetterment.navigation.PetOwnerRoutes
 
@@ -454,6 +459,8 @@ fun PetOwnerPetDetailScreen(petId: String, navController: NavController) {
 
     var pastAppointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
 
+    var cases by remember { mutableStateOf<List<Case>>(emptyList()) }
+
     var isLoading by remember { mutableStateOf(true) }
 
     var errorMessage by remember { mutableStateOf("") }
@@ -486,7 +493,8 @@ fun PetOwnerPetDetailScreen(petId: String, navController: NavController) {
 
 
 
-            val cases = GetCaseData.getCasesForPet(petId)
+            val petCases = GetCaseData.getCasesForPet(petId)
+            cases = petCases
 
             val meds = mutableListOf<Medication>()
 
@@ -546,9 +554,9 @@ fun PetOwnerPetDetailScreen(petId: String, navController: NavController) {
 
                     isSaving = true
 
-                    val success = GetPetData.updatePet(updatedPet)
+                    val result = GetPetData.updatePet(updatedPet)
 
-                    if (success) {
+                    if (result.isSuccess) {
 
                         pet = updatedPet
 
@@ -556,7 +564,8 @@ fun PetOwnerPetDetailScreen(petId: String, navController: NavController) {
 
                     } else {
 
-                        errorMessage = "Unable to update pet details. Please check connection and permissions."
+                        val error = result.exceptionOrNull()
+                        errorMessage = "Update failed: ${error?.message ?: "Unknown error"}"
 
                     }
 
@@ -580,13 +589,23 @@ fun PetOwnerPetDetailScreen(petId: String, navController: NavController) {
 
         appointments = pastAppointments,
 
+        cases = cases,
+
         isLoading = isLoading,
 
         errorMessage = errorMessage,
 
         onBackClick = { navController.popBackStack() },
 
-        onEditClick = { showEditDialog = true }
+        onEditClick = { showEditDialog = true },
+
+        onViewAllRecordsClick = {
+                navController.navigate(PetOwnerRoutes.Cases) {
+                    popUpTo(PetOwnerRoutes.Dashboard) { inclusive = false; saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
 
     )
 
@@ -606,13 +625,17 @@ fun PetOwnerPetDetailContent(
 
     appointments: List<Appointment>,
 
+    cases: List<Case>,
+
     isLoading: Boolean,
 
     errorMessage: String,
 
     onBackClick: () -> Unit,
 
-    onEditClick: () -> Unit = {}
+    onEditClick: () -> Unit = {},
+
+    onViewAllRecordsClick: () -> Unit = {}
 
 ) {
 
@@ -629,20 +652,6 @@ fun PetOwnerPetDetailContent(
                     IconButton(onClick = onBackClick) {
 
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-
-                    }
-
-                },
-
-                actions = {
-
-                    if (pet != null) {
-
-                        IconButton(onClick = onEditClick) {
-
-                            Icon(Icons.Filled.Edit, "Edit Pet")
-
-                        }
 
                     }
 
@@ -686,7 +695,10 @@ fun PetOwnerPetDetailContent(
 
                     appointments = appointments,
 
-                    onEditClick = onEditClick
+                    cases = cases,
+
+                    onEditClick = onEditClick,
+                    onViewAllRecordsClick = onViewAllRecordsClick
 
                 )
 
@@ -710,13 +722,19 @@ private fun PetOwnerPetDetailBody(
 
     appointments: List<Appointment>,
 
-    onEditClick: () -> Unit
+    cases: List<Case>,
+
+    onEditClick: () -> Unit,
+
+    onViewAllRecordsClick: () -> Unit
 
 ) {
 
-    var expandedSection by remember { mutableStateOf<String?>("basic") }
+    val nextVaccination = findNextVaccination(cases, appointments)
 
+    val recentActivity = findRecentHealthActivity(cases, appointments)
 
+    val todaysMedications = getTodaysMedications(medications)
 
     Column(
 
@@ -732,349 +750,20 @@ private fun PetOwnerPetDetailBody(
 
     ) {
 
-        // ── Identity Card (matching mockup) ──────────────────────────────
-
-        Card(modifier = Modifier.fillMaxWidth()) {
-
-            Column(modifier = Modifier.padding(16.dp)) {
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-
-                    Surface(
-
-                        modifier = Modifier.size(56.dp),
-
-                        shape = CircleShape,
-
-                        color = MaterialTheme.colorScheme.primaryContainer
-
-                    ) {
-
-                        Box(contentAlignment = Alignment.Center) {
-
-                            Text(
-
-                                text = if (!pet.photo_url.isNullOrBlank()) {
-
-                                    pet.photo_url
-
-                                } else {
-
-                                    when (pet.species.uppercase()) {
-
-                                        "DOG" -> "🐶"
-
-                                        "CAT" -> "🐱"
-
-                                        else  -> "🐾"
-
-                                    }
-
-                                },
-
-                                style = MaterialTheme.typography.headlineMedium
-
-                            )
-
-                        }
-
-                    }
-
-                    Spacer(modifier = Modifier.width(14.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-
-                        Text(pet.name, style = MaterialTheme.typography.headlineSmall)
-
-                        if (!pet.nickname.isNullOrBlank()) {
-
-                            Text(
-
-                                text = "\"${pet.nickname}\"",
-
-                                style = MaterialTheme.typography.titleMedium,
-
-                                color = MaterialTheme.colorScheme.primary
-
-                            )
-
-                        }
-
-                        Text(
-
-                            text = buildString {
-
-                                pet.breed?.let { append(it) } ?: append(pet.species.lowercase().replaceFirstChar { it.uppercase() })
-
-                                pet.birth_date?.let { append(" • $it") }
-
-                            },
-
-                            style = MaterialTheme.typography.bodyMedium,
-
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-
-                        )
-
-                        pet.weight?.let {
-
-                            Text(
-
-                                text = "${it} kg",
-
-                                style = MaterialTheme.typography.bodySmall,
-
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-
-                            )
-
-                        }
-
-                    }
-
-                    IconButton(onClick = onEditClick) {
-
-                        Icon(Icons.Filled.Edit, contentDescription = "Edit Profile")
-
-                    }
-
-                }
-
-            }
-
-        }
-
-
-
-        // ── Navigation Section Rows (matching mockup) ─────────────────────
-
-
-
-        // Section 1: Vaccinations
-
-        SectionNavCard(
-
-            icon = "💉",
-
-            title = "Vaccinations",
-
-            subtitle = "Vaccination history and upcoming due dates.",
-
-            isExpanded = expandedSection == "vaccinations",
-
-            onClick = {
-
-                expandedSection = if (expandedSection == "vaccinations") null else "vaccinations"
-
-            }
-
-        ) {
-
-            Column(
-
-                modifier = Modifier.padding(16.dp),
-
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-
-            ) {
-
-                Text(
-
-                    text = "No upcoming vaccinations recorded.",
-
-                    style = MaterialTheme.typography.bodyMedium,
-
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-
-                )
-
-                Text(
-
-                    text = "Vaccination records verified by clinic staff will appear here.",
-
-                    style = MaterialTheme.typography.bodySmall,
-
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-
-                )
-
-            }
-
-        }
-
-
-
-        // Section 2: Medications
-
-        SectionNavCard(
-
-            icon = "💊",
-
-            title = "Medications",
-
-            subtitle = "Current prescriptions and their schedules, if any.",
-
-            isExpanded = expandedSection == "medications",
-
-            onClick = {
-
-                expandedSection = if (expandedSection == "medications") null else "medications"
-
-            }
-
-        ) {
-
-            Column(
-
-                modifier = Modifier.padding(16.dp),
-
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-
-            ) {
-
-                if (medications.isEmpty()) {
-
-                    Text(
-
-                        text = "No active prescriptions.",
-
-                        style = MaterialTheme.typography.bodyMedium,
-
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-
-                    )
-
-                } else {
-
-                    medications.forEach { med ->
-
-                        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-
-                            Column(modifier = Modifier.padding(12.dp)) {
-
-                                Text(med.name, style = MaterialTheme.typography.titleSmall)
-
-                                Text("${med.dosage} • ${med.frequency}", style = MaterialTheme.typography.bodySmall)
-
-                                med.end_date?.let {
-
-                                    Text("Until $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-
-
-
-        // Section 3: Appointment History
-
-        SectionNavCard(
-
-            icon = "📋",
-
-            title = "Appointment History",
-
-            subtitle = "Previous visits, approved medical records, and 3D visualizations.",
-
-            isExpanded = expandedSection == "appointments",
-
-            onClick = {
-
-                expandedSection = if (expandedSection == "appointments") null else "appointments"
-
-            }
-
-        ) {
-
-            Column(
-
-                modifier = Modifier.padding(16.dp),
-
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-
-            ) {
-
-                if (appointments.isEmpty()) {
-
-                    Text(
-
-                        text = "No past appointments booked.",
-
-                        style = MaterialTheme.typography.bodyMedium,
-
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-
-                    )
-
-                } else {
-
-                    appointments.forEach { appt ->
-
-                        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-
-                            Row(
-
-                                modifier = Modifier.fillMaxWidth().padding(12.dp),
-
-                                horizontalArrangement = Arrangement.SpaceBetween,
-
-                                verticalAlignment = Alignment.CenterVertically
-
-                            ) {
-
-                                Column {
-
-                                    Text(
-
-                                        text = appt.appointment_type.lowercase().replace("_", " ").replaceFirstChar { it.uppercase() },
-
-                                        style = MaterialTheme.typography.titleSmall
-
-                                    )
-
-                                    Text(
-
-                                        text = "${appt.appointment_date} at ${appt.appointment_time.take(5)}",
-
-                                        style = MaterialTheme.typography.bodySmall,
-
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-
-                                    )
-
-                                }
-
-                                AssistChip(
-
-                                    onClick = {},
-
-                                    label = { Text(appt.status.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }) }
-
-                                )
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-
-
+        // Section A: Pet Details
+        PetDetailsCard(pet = pet, onEditClick = onEditClick)
+
+        // Section B: Next Vaccination
+        NextVaccinationCard(nextVaccination = nextVaccination)
+
+        // Section C: Recent Health Activity
+        RecentHealthActivityCard(
+            recentActivity = recentActivity,
+            onViewAllClick = onViewAllRecordsClick
+        )
+
+        // Section D: Medication Schedule (Today)
+        MedicationScheduleCard(todaysMedications = todaysMedications)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -1082,6 +771,398 @@ private fun PetOwnerPetDetailBody(
 
 }
 
+
+
+// ─── Helper functions for data extraction ────────────────────────────────────
+
+private fun findNextVaccination(cases: List<Case>, appointments: List<Appointment>): Pair<String, String>? {
+    val vaccinationCases = cases
+        .filter { it.case_type == "VACCINATION" && it.current_status !in listOf("COMPLETED", "CANCELLED", "DISCHARGED") }
+        .sortedBy { it.created_at ?: "" }
+
+    if (vaccinationCases.isNotEmpty()) {
+        val nextCase = vaccinationCases.first()
+        val caseTitle = nextCase.case_type.lowercase().replaceFirstChar { it.uppercase() }
+        val linkedAppt = appointments.find { it.linked_case_id == nextCase.id }
+        val dueDate = linkedAppt?.appointment_date ?: nextCase.created_at?.take(10) ?: "Date not specified"
+        return Pair(caseTitle, dueDate)
+    }
+
+    val upcomingVaccAppointments = appointments
+        .filter { it.appointment_type == "VACCINATION" && it.status in listOf("PENDING", "CONFIRMED", "CHECKED_IN", "RESCHEDULED") }
+        .sortedBy { it.appointment_date }
+
+    if (upcomingVaccAppointments.isNotEmpty()) {
+        val appt = upcomingVaccAppointments.first()
+        val apptTitle = appt.appointment_type.lowercase().replaceFirstChar { it.uppercase() }
+        return Pair(apptTitle, appt.appointment_date)
+    }
+
+    return null
+}
+
+private fun findRecentHealthActivity(cases: List<Case>, appointments: List<Appointment>): List<HealthActivityItem> {
+    val activities = mutableListOf<HealthActivityItem>()
+
+    val recentCases = cases
+        .filter { it.current_status !in listOf("CANCELLED") }
+        .sortedByDescending { it.created_at ?: "" }
+        .take(3)
+
+    recentCases.forEach { c ->
+        activities.add(HealthActivityItem(
+            title = c.case_type.lowercase().replace("_", " ").replaceFirstChar { it.uppercase() },
+            date = c.created_at?.take(10) ?: "Date not available",
+            summary = CaseStages.displayName(c.current_status),
+            type = "case",
+            id = c.id
+        ))
+    }
+
+    val recentAppointments = appointments
+        .filter { it.status in listOf("COMPLETED", "CHECKED_IN") }
+        .sortedByDescending { it.appointment_date }
+        .take(3)
+
+    recentAppointments.forEach { appt ->
+        activities.add(HealthActivityItem(
+            title = appt.appointment_type.lowercase().replace("_", " ").replaceFirstChar { it.uppercase() },
+            date = appt.appointment_date,
+            summary = appt.reason?.takeIf { it.isNotBlank() } ?: "Visit completed",
+            type = "appointment",
+            id = appt.id
+        ))
+    }
+
+    return activities
+        .sortedByDescending { it.date }
+        .take(3)
+}
+
+private fun getTodaysMedications(medications: List<Medication>): List<Medication> {
+    val today = java.time.LocalDate.now().toString()
+    return medications.filter { med ->
+        med.is_active &&
+        med.start_date <= today &&
+        (med.end_date == null || med.end_date!! >= today)
+    }
+}
+
+private data class HealthActivityItem(
+    val title: String,
+    val date: String,
+    val summary: String,
+    val type: String,
+    val id: String?
+)
+
+
+// ─── Section Composables ─────────────────────────────────────────────────────
+
+@Composable
+private fun DetailRow(label: String, value: String, isReadOnly: Boolean = false) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(0.4f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = if (isReadOnly) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+            ),
+            modifier = Modifier.weight(0.6f).fillMaxWidth(),
+            textAlign = TextAlign.End
+        )
+    }
+}
+
+@Composable
+private fun PetDetailsCard(pet: Pet, onEditClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+    )) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    modifier = Modifier.size(56.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = if (!pet.photo_url.isNullOrBlank()) {
+                                pet.photo_url
+                            } else {
+                                when (pet.species.uppercase()) {
+                                    "DOG" -> "🐶"
+                                    "CAT" -> "🐱"
+                                    else -> "🐾"
+                                }
+                            },
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(pet.name, style = MaterialTheme.typography.headlineSmall)
+                    if (!pet.nickname.isNullOrBlank()) {
+                        Text(
+                            text = "\"${pet.nickname}\"",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                IconButton(onClick = onEditClick) {
+                    Icon(Icons.Filled.Edit, contentDescription = "Edit Profile")
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                DetailRow(label = "Species", value = pet.species.lowercase().replaceFirstChar { it.uppercase() })
+                pet.breed?.let { DetailRow(label = "Breed", value = it) }
+                DetailRow(label = "Sex", value = pet.sex.lowercase().replaceFirstChar { it.uppercase() })
+                pet.birth_date?.let { DetailRow(label = "Date of Birth", value = it) }
+                pet.weight?.let { DetailRow(label = "Weight", value = "${it} kg") }
+                DetailRow(
+                    label = "Known Allergies",
+                    value = pet.known_allergies?.takeIf { it.isNotBlank() } ?: "None recorded",
+                    isReadOnly = true
+                )
+                DetailRow(
+                    label = "Pre-existing Conditions",
+                    value = pet.pre_existing_conditions?.takeIf { it.isNotBlank() } ?: "None recorded",
+                    isReadOnly = true
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NextVaccinationCard(nextVaccination: Pair<String, String>?) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+    )) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("💉", style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Next Vaccination", style = MaterialTheme.typography.titleMedium)
+                    Text("Verified clinic record", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(12.dp))
+            nextVaccination?.let { (name, dueDate) ->
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column {
+                            Text(name, style = MaterialTheme.typography.titleSmall)
+                            Text("Due: $dueDate", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text("Upcoming", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    Text(
+                        "Vaccination records are managed by clinic staff. Contact your veterinarian for scheduling.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } ?: Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "No upcoming vaccinations",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "Your pet has no verified upcoming vaccinations at this time.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HealthActivityItemCard(item: HealthActivityItem) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column {
+                    Text(item.title, style = MaterialTheme.typography.titleSmall)
+                    Text(item.date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Text(
+                    text = when (item.type) {
+                        "case" -> "Medical Record"
+                        "appointment" -> "Visit"
+                        else -> "Record"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(item.summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun RecentHealthActivityCard(
+    recentActivity: List<HealthActivityItem>,
+    onViewAllClick: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+    )) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("📋", style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Recent Health Activity", style = MaterialTheme.typography.titleMedium)
+                }
+                TextButton(onClick = onViewAllClick) {
+                    Text("View all")
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(12.dp))
+            if (recentActivity.isEmpty()) {
+                Text(
+                    "No recent health activity recorded.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    recentActivity.forEach { item ->
+                        HealthActivityItemCard(item = item)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MedicationItemCard(medication: Medication) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(medication.name, style = MaterialTheme.typography.titleSmall)
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("${medication.dosage} • ${medication.frequency}", style = MaterialTheme.typography.bodySmall)
+                medication.scheduled_times?.firstOrNull()?.let { time ->
+                    Text("Time: $time", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+            medication.special_instructions?.takeIf { it.isNotBlank() }?.let { instructions ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = instructions,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MedicationScheduleCard(todaysMedications: List<Medication>) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+    )) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("💊", style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Medication Schedule (Today)", style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(12.dp))
+            if (todaysMedications.isEmpty()) {
+                Text(
+                    "No medications scheduled for today",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    todaysMedications.forEach { med ->
+                        MedicationItemCard(medication = med)
+                    }
+                }
+            }
+        }
+    }
+}
 
 
 // ─── Shared helper composables ────────────────────────────────────────────────
@@ -1684,7 +1765,11 @@ fun EditPetDialog(
 
     var selectedIcon by remember {
 
-        mutableStateOf(pet.photo_url?.takeIf { it.isNotBlank() } ?: if (pet.species.uppercase() == "DOG") "🐶" else "🐱")
+        mutableStateOf(pet.photo_url?.takeIf { it.isNotBlank() } ?: when (pet.species.uppercase()) {
+            "DOG" -> "🐶"
+            "CAT" -> "🐱"
+            else -> "🐾"
+        })
 
     }
 
@@ -1807,33 +1892,23 @@ fun EditPetDialog(
 
 
                 OutlinedTextField(
-
                     value = allergies,
-
                     onValueChange = { allergies = it },
-
                     label = { Text("Known Allergies") },
-
                     modifier = Modifier.fillMaxWidth(),
-
-                    maxLines = 3
-
+                    maxLines = 3,
+                    readOnly = true
                 )
 
 
 
                 OutlinedTextField(
-
                     value = conditions,
-
                     onValueChange = { conditions = it },
-
                     label = { Text("Pre-existing Conditions") },
-
                     modifier = Modifier.fillMaxWidth(),
-
-                    maxLines = 3
-
+                    maxLines = 3,
+                    readOnly = true
                 )
 
             }

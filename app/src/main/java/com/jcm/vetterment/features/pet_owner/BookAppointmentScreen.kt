@@ -32,12 +32,9 @@ fun BookAppointmentScreen(navController: NavController) {
     var successMessage by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
-    // Form state
+    // Form state - only Consultation type allowed
     var selectedPet by remember { mutableStateOf<Pet?>(null) }
-    var selectedType by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
-    var appointmentDate by remember { mutableStateOf("") }
-    var appointmentTime by remember { mutableStateOf("") }
     var time by remember { mutableStateOf("") }
     var reason by remember { mutableStateOf("") }
 
@@ -61,12 +58,10 @@ fun BookAppointmentScreen(navController: NavController) {
         errorMessage = errorMessage,
         successMessage = successMessage,
         selectedPet = selectedPet,
-        selectedType = selectedType,
         date = date,
         time = time,
         reason = reason,
         onPetSelect = { selectedPet = it },
-        onTypeSelect = { selectedType = it },
         onDateChange = { date = it },
         onTimeChange = { time = it },
         onReasonChange = { reason = it },
@@ -77,16 +72,12 @@ fun BookAppointmentScreen(navController: NavController) {
                 errorMessage = "Please select a pet."
                 return@BookAppointmentContent
             }
-            if (selectedType.isBlank()) {
-                errorMessage = "Please select an appointment type."
-                return@BookAppointmentContent
-            }
             if (date.isBlank()) {
-                errorMessage = "Please enter a date (YYYY-MM-DD)."
+                errorMessage = "Please select a date."
                 return@BookAppointmentContent
             }
             if (time.isBlank()) {
-                errorMessage = "Please enter a time (HH:MM)."
+                errorMessage = "Please select a preferred time."
                 return@BookAppointmentContent
             }
 
@@ -97,16 +88,16 @@ fun BookAppointmentScreen(navController: NavController) {
                     val appt = Appointment(
                         pet_id = pet.id,
                         owner_id = ownerId,
-                        appointment_type = selectedType,
+                        appointment_type = "CONSULTATION",
                         appointment_date = date.trim(),
                         appointment_time = "${time.trim()}:00",
                         reason = reason.trim().takeIf { it.isNotBlank() }
                     )
                     val result = GetAppointmentData.createAppointment(appt)
                     if (result != null) {
-                        successMessage = "Appointment request submitted. The clinic will review it shortly."
+                        successMessage = "Consultation request submitted. The clinic will review it shortly."
                     } else {
-                        errorMessage = "Failed to submit appointment. Please check your inputs."
+                        errorMessage = "Failed to submit request. Please check your inputs."
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -121,16 +112,6 @@ fun BookAppointmentScreen(navController: NavController) {
 
 // ─── UI layer ─────────────────────────────────────────────────────────────────
 
-private val appointmentTypes = listOf(
-    "CONSULTATION",
-    "VACCINATION",
-    "FOLLOW_UP",
-    "SURGERY",
-    "GROOMING",
-    "EMERGENCY",
-    "OTHER"
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookAppointmentContent(
@@ -140,12 +121,10 @@ fun BookAppointmentContent(
     errorMessage: String,
     successMessage: String,
     selectedPet: Pet?,
-    selectedType: String,
     date: String,
     time: String,
     reason: String,
     onPetSelect: (Pet) -> Unit,
-    onTypeSelect: (String) -> Unit,
     onDateChange: (String) -> Unit,
     onTimeChange: (String) -> Unit,
     onReasonChange: (String) -> Unit,
@@ -153,12 +132,11 @@ fun BookAppointmentContent(
     onSubmit: () -> Unit
 ) {
     var petMenuExpanded by remember { mutableStateOf(false) }
-    var typeMenuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Book Appointment") },
+                title = { Text("Book Consultation") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -250,47 +228,44 @@ fun BookAppointmentContent(
                 }
             }
 
-            // ── Appointment type ──────────────────────────────────────────
+            // ── Appointment Type (Fixed: Consultation) ────────────────────
             Text("Appointment Type", style = MaterialTheme.typography.labelLarge)
-
-            ExposedDropdownMenuBox(
-                expanded = typeMenuExpanded,
-                onExpandedChange = { typeMenuExpanded = it }
-            ) {
-                OutlinedTextField(
-                    value = selectedType
-                        .lowercase()
-                        .replace("_", " ")
-                        .replaceFirstChar { it.uppercase() },
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Type") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenuExpanded)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
-                ExposedDropdownMenu(
-                    expanded = typeMenuExpanded,
-                    onDismissRequest = { typeMenuExpanded = false }
+            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    appointmentTypes.forEach { type ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    type.lowercase()
-                                        .replace("_", " ")
-                                        .replaceFirstChar { it.uppercase() }
-                                )
-                            },
-                            onClick = {
-                                onTypeSelect(type)
-                                typeMenuExpanded = false
-                            }
-                        )
+                    Text("Consultation", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        "Check-up",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            // ── Doctor Fee ────────────────────────────────────────────────
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Doctor's Fee", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("₱400", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
+                    Text(
+                        "Payable at clinic",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
             }
 
@@ -299,15 +274,46 @@ fun BookAppointmentContent(
 
             DatePickerField(
                 value = date,
-                label = "Date",
+                label = "Visit Date",
                 onValueChange = onDateChange
             )
 
             TimePickerField(
                 value = time,
-                label = "Time",
+                label = "Preferred Time (not guaranteed)",
                 onValueChange = onTimeChange
             )
+
+            // ── Booking Policy Notice ─────────────────────────────────────
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text("⚠ ", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Booking Policy",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                            Text(
+                                "Consultation appointments are for planning your visit and do not guarantee a specific consultation time or queue priority. PetHub Veterinary Clinic operates 24/7 and follows a first-come-first-served policy. For emergencies, visit or contact the clinic directly instead of waiting for an app appointment.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+                    }
+                }
+            }
+
             // ── Reason ────────────────────────────────────────────────────
             Text("Reason / Notes", style = MaterialTheme.typography.labelLarge)
 
@@ -334,7 +340,7 @@ fun BookAppointmentContent(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Submitting…")
+                    Text("Submit Request")
                 } else {
                     Text("Submit Request")
                 }

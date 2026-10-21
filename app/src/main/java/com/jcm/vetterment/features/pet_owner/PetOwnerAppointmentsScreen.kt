@@ -220,7 +220,7 @@ fun PetOwnerAppointmentsContent(
 
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
 
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
                         Text(
 
@@ -232,17 +232,15 @@ fun PetOwnerAppointmentsContent(
 
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         Text(
-
-                            "Tap + to book one.",
-
+                            "Book a consultation for your pet.",
                             style = MaterialTheme.typography.bodySmall,
-
                             color = MaterialTheme.colorScheme.onSurfaceVariant
-
                         )
+
+                        Button(onClick = onBookClick) {
+                            Text("Book Consultation")
+                        }
 
                     }
 
@@ -424,6 +422,15 @@ fun OwnerAppointmentCard(appointment: Appointment, onClick: () -> Unit) {
 
                     )
 
+                }
+
+                // Doctor fee for Consultation appointments
+                if (appointment.appointment_type == "CONSULTATION") {
+                    Text(
+                        text = "Doctor's fee: ₱400",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
 
             }
