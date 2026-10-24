@@ -45,7 +45,7 @@ fun BranchManagerProfileScreen(navController: NavController) {
     }
 
     val onLogoutClick = { showLogoutDialog = true }
-    val onLogoutConfirm = {
+    val onLogoutConfirm: () -> Unit = {
         showLogoutDialog = false
         scope.launch {
             try {
