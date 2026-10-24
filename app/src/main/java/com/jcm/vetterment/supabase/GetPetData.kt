@@ -14,7 +14,7 @@ object GetPetData {
 
     suspend fun createPet(
         pet: Pet
-    ): Pet? {
+    ): Result<Pet> {
 
         val normalizedOwnerId =
             pet.owner_id.trim()
@@ -30,30 +30,30 @@ object GetPetData {
 
 
         if (normalizedOwnerId.isBlank()) {
-            return null
+            return Result.failure(IllegalArgumentException("Owner ID is blank"))
         }
 
         if (normalizedName.isBlank()) {
-            return null
+            return Result.failure(IllegalArgumentException("Pet name is blank"))
         }
 
         if (normalizedSpecies !in listOf("DOG", "CAT")) {
-            return null
+            return Result.failure(IllegalArgumentException("Species must be DOG or CAT"))
         }
 
         if (normalizedSex !in listOf("MALE", "FEMALE", "UNKNOWN")) {
-            return null
+            return Result.failure(IllegalArgumentException("Sex must be MALE, FEMALE, or UNKNOWN"))
         }
 
 
         val owner =
             GetProfileData.getProfileById(
                 normalizedOwnerId
-            ) ?: return null
+            ) ?: return Result.failure(IllegalArgumentException("Owner profile not found"))
 
 
         if (owner.role != "pet_owner") {
-            return null
+            return Result.failure(IllegalArgumentException("Owner must have pet_owner role"))
         }
 
 
@@ -61,7 +61,7 @@ object GetPetData {
             SupabaseClient.client
                 .auth
                 .currentUserOrNull()
-                ?: return null
+                ?: return Result.failure(IllegalStateException("User not authenticated"))
 
         val petToInsert = pet.copy(
             owner_id = normalizedOwnerId,
@@ -93,15 +93,16 @@ object GetPetData {
 
 
         return try {
-            SupabaseClient.client
+            val createdPet = SupabaseClient.client
                 .from("pets")
                 .insert(petToInsert) {
                     select()
                 }
                 .decodeSingle<Pet>()
+            Result.success(createdPet)
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            Result.failure(e)
         }
     }
 

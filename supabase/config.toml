@@ -1,0 +1,14 @@
+# Supabase CLI configuration for local Edge Function development
+# Used by: supabase functions serve --env-file supabase/.env.local
+
+[functions.create-paypal-order]
+  # Entry point is index.ts (default)
+  # No additional config needed
+
+[functions.capture-paypal-order]
+  # Entry point is index.ts (default)
+  # No additional config needed
+
+# Optional: Set default environment file for local development
+# [functions]
+#   env_file = "supabase/.env.local"

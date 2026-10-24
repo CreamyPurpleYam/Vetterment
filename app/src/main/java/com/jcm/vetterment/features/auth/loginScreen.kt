@@ -39,6 +39,7 @@ import com.jcm.vetterment.features.components.VettermentError
 import com.jcm.vetterment.features.components.VettermentOutlinedTextField
 import com.jcm.vetterment.features.components.VettermentSecondary
 import com.jcm.vetterment.features.components.VettermentTitle
+import com.jcm.vetterment.navigation.BranchManagerRoutes
 import com.jcm.vetterment.navigation.StaffRoutes
 import com.jcm.vetterment.supabase.GetProfileData
 import com.jcm.vetterment.supabase.SupabaseClient
@@ -103,7 +104,7 @@ fun LoginScreen(navController: NavController)
                                 }
 
                                 "branch_manager" -> {
-                                    navController.navigate("branch_manager") {
+                                    navController.navigate(BranchManagerRoutes.Dashboard) {
                                         popUpTo("login") {
                                             inclusive = true
                                         }

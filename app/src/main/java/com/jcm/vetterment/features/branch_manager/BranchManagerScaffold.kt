@@ -18,10 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.jcm.vetterment.navigation.AppointmentRoutes
 import com.jcm.vetterment.navigation.BranchManagerRoutes
-import com.jcm.vetterment.navigation.CaseRoutes
-import com.jcm.vetterment.navigation.StaffRoutes
 
 private data class BranchManagerNavItem(
     val label: String,
@@ -39,13 +36,13 @@ private val branchManagerNavItems = listOf(
     ),
     BranchManagerNavItem(
         label = "Patients",
-        route = StaffRoutes.Patients,
+        route = BranchManagerRoutes.Patients,
         selectedIcon = Icons.Filled.MedicalServices,
         unselectedIcon = Icons.Outlined.MedicalServices
     ),
     BranchManagerNavItem(
         label = "Appointments",
-        route = AppointmentRoutes.Appointments,
+        route = BranchManagerRoutes.Appointments,
         selectedIcon = Icons.Filled.CalendarMonth,
         unselectedIcon = Icons.Outlined.CalendarMonth
     ),
@@ -57,7 +54,7 @@ private val branchManagerNavItems = listOf(
     ),
     BranchManagerNavItem(
         label = "Profile",
-        route = StaffRoutes.Profile,
+        route = BranchManagerRoutes.Profile,
         selectedIcon = Icons.Filled.AccountCircle,
         unselectedIcon = Icons.Outlined.AccountCircle
     )

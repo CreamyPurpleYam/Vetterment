@@ -221,15 +221,17 @@ fun MyPetsScreen(navController: NavController) {
 
                     isCreatingPet = true
 
-                    val created = GetPetData.createPet(newPet)
+                    val result = GetPetData.createPet(newPet)
 
-                    if (created != null) {
+                    if (result.isSuccess) {
+
+                        val created = result.getOrNull()
 
                         showAddPetDialog = false
 
                         pets = GetPetData.getPetsForOwner(ownerId)
 
-                        created.id?.let { id ->
+                        created?.id?.let { id ->
 
                             navController.navigate(PetOwnerRoutes.petDetail(id))
 
@@ -237,7 +239,8 @@ fun MyPetsScreen(navController: NavController) {
 
                     } else {
 
-                        errorMessage = "Unable to add pet. Please check fields and try again."
+                        val error = result.exceptionOrNull()
+                        errorMessage = "Unable to add pet: ${error?.message ?: "Unknown error"}"
 
                     }
 

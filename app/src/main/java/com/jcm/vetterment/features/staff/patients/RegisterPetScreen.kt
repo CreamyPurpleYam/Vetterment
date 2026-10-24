@@ -157,16 +157,20 @@ fun RegisterPetScreen(
                 photo_url = null
             )
 
-            val created = GetPetData.createPet(petToCreate)
+            val result = GetPetData.createPet(petToCreate)
 
-            if (created?.id != null) {
-                navController.navigate(StaffRoutes.petDetails(created.id)) {
-                    // Remove RegisterPetScreen and SearchOwnerScreen from back stack
-                    // so Back from PetDetailsScreen goes straight to PatientsScreen
-                    popUpTo(StaffRoutes.SearchOwner) { inclusive = true }
+            if (result.isSuccess) {
+                val created = result.getOrNull()
+                if (created?.id != null) {
+                    navController.navigate(StaffRoutes.petDetails(created.id)) {
+                        // Remove RegisterPetScreen and SearchOwnerScreen from back stack
+                        // so Back from PetDetailsScreen goes straight to PatientsScreen
+                        popUpTo(StaffRoutes.SearchOwner) { inclusive = true }
+                    }
                 }
             } else {
-                submitError = "Failed to register patient. Please try again."
+                val error = result.exceptionOrNull()
+                submitError = "Failed to register patient: ${error?.message ?: "Unknown error"}"
             }
 
         } catch (e: Exception) {

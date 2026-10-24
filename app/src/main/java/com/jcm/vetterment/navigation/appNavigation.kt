@@ -9,6 +9,9 @@ import com.jcm.vetterment.features.auth.RegisterScreen
 import com.jcm.vetterment.features.branchmanager.BranchManagerDashboardScreen
 import com.jcm.vetterment.features.branchmanager.CreateStaffScreen
 import com.jcm.vetterment.features.branchmanager.StaffListScreen
+import com.jcm.vetterment.features.branchmanager.BranchManagerPatientsScreen
+import com.jcm.vetterment.features.branchmanager.BranchManagerAppointmentsScreen
+import com.jcm.vetterment.features.branchmanager.BranchManagerProfileScreen
 import com.jcm.vetterment.features.pet_owner.BookAppointmentScreen
 import com.jcm.vetterment.features.pet_owner.MyPetsScreen
 import com.jcm.vetterment.features.pet_owner.PetOwner_Dashboard
@@ -90,9 +93,6 @@ fun appNavigation() {
         }
 
         // ── Branch Manager ────────────────────────────────────────────────────
-        composable("branch_manager") {
-            BranchManagerDashboardScreen(navController)
-        }
         composable(BranchManagerRoutes.Dashboard) {
             BranchManagerDashboardScreen(navController)
         }
@@ -101,6 +101,15 @@ fun appNavigation() {
         }
         composable(BranchManagerRoutes.CreateStaffAccount) {
             CreateStaffScreen(navController)
+        }
+        composable(BranchManagerRoutes.Patients) {
+            BranchManagerPatientsScreen(navController)
+        }
+        composable(BranchManagerRoutes.Appointments) {
+            BranchManagerAppointmentsScreen(navController)
+        }
+        composable(BranchManagerRoutes.Profile) {
+            BranchManagerProfileScreen(navController)
         }
 
         // ── Staff — Dashboard ─────────────────────────────────────────────────
