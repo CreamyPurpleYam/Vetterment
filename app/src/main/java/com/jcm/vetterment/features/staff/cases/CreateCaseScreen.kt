@@ -22,7 +22,6 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun SearchPetForCaseScreen(navController: NavController) {
-
     var searchText by remember { mutableStateOf("") }
     var patients by remember { mutableStateOf<List<PatientListItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
@@ -260,7 +259,6 @@ fun SelectCaseTypeContent(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-
             Text(
                 text = "What type of case is this?",
                 style = MaterialTheme.typography.titleMedium

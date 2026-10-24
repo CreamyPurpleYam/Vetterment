@@ -22,7 +22,6 @@ import com.jcm.vetterment.supabase.GetProfileData
 
 @Composable
 fun PetOwnerCasesScreen(navController: NavController) {
-
     var casesWithPets by remember { mutableStateOf<List<Pair<Case, Pet?>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
@@ -58,7 +57,7 @@ fun PetOwnerCasesScreen(navController: NavController) {
         casesWithPets = casesWithPets,
         isLoading = isLoading,
         errorMessage = errorMessage,
-        onCaseClick = { navController.navigate(PetOwnerRoutes.caseDetail(it.id!!)) }
+        onCaseClick = { it.id?.let { id -> navController.navigate(PetOwnerRoutes.caseDetail(id)) } }
     )
 }
 

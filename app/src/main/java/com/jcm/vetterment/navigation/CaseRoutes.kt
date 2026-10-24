@@ -1,7 +1,6 @@
 package com.jcm.vetterment.navigation
 
 object CaseRoutes {
-
     const val Cases = "cases"
 
     const val SearchPetForCase = "search_pet_for_case"

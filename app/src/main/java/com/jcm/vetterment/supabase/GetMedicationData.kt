@@ -6,7 +6,6 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
 
 object GetMedicationData {
-
     /**
      * Fetch all medications for a given case, ordered by creation date ascending.
      */

@@ -32,7 +32,6 @@ import com.jcm.vetterment.supabase.GetProfileData
 
 @Composable
 fun BranchManagerDashboardScreen(navController: NavController) {
-
     var profile by remember { mutableStateOf<Profile?>(null) }
     var activeCases by remember { mutableStateOf<List<Case>>(emptyList()) }
     var unassignedCases by remember { mutableStateOf<List<Case>>(emptyList()) }
@@ -87,7 +86,7 @@ fun BranchManagerDashboardScreen(navController: NavController) {
         onViewAppointmentsClick = { navController.navigate(AppointmentRoutes.Appointments) },
         onViewStaffClick = { navController.navigate(BranchManagerRoutes.StaffList) },
         onCreateStaffClick = { navController.navigate(BranchManagerRoutes.CreateStaffAccount) },
-        onCaseClick = { navController.navigate(CaseRoutes.caseDetails(it.id!!)) },
+        onCaseClick = { it.id?.let { id -> navController.navigate(CaseRoutes.caseDetails(id)) } },
         onViewPatientsClick = { navController.navigate(StaffRoutes.Patients) }
     )
 }
@@ -131,7 +130,6 @@ fun BranchManagerDashboardContent(
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
             // ── Greeting ──────────────────────────────────────────────────
             profile?.let {
                 Text(

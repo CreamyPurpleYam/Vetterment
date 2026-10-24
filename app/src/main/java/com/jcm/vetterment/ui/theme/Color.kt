@@ -2,7 +2,6 @@ package com.jcm.vetterment.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-
 val PrimaryGreen = Color(0xFF008A65)//titles
 val ButtonGreen = Color(0xFF7AD1B3)
 

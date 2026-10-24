@@ -19,7 +19,6 @@ import com.jcm.vetterment.supabase.GetProfileData
 
 @Composable
 fun CreateStaffScreen(navController: NavController) {
-
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -187,7 +186,6 @@ fun CreateStaffContent(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-
             Text(
                 text = "* Required fields",
                 style = MaterialTheme.typography.labelSmall,

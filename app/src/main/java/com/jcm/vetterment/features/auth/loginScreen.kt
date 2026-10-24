@@ -39,13 +39,13 @@ import com.jcm.vetterment.features.components.VettermentError
 import com.jcm.vetterment.features.components.VettermentOutlinedTextField
 import com.jcm.vetterment.features.components.VettermentSecondary
 import com.jcm.vetterment.features.components.VettermentTitle
+import com.jcm.vetterment.navigation.BranchManagerRoutes
 import com.jcm.vetterment.navigation.StaffRoutes
 import com.jcm.vetterment.supabase.GetProfileData
 import com.jcm.vetterment.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
-
 
 @Composable //Logic layer
 fun LoginScreen(navController: NavController)
@@ -85,7 +85,6 @@ fun LoginScreen(navController: NavController)
                             }
                             val role = GetProfileData.getCurrentRole()
                             when(role) {
-
                                 "pet_owner" -> {
                                     navController.navigate("pet_owner") {
                                         popUpTo("login") {
@@ -105,7 +104,7 @@ fun LoginScreen(navController: NavController)
                                 }
 
                                 "branch_manager" -> {
-                                    navController.navigate("branch_manager") {
+                                    navController.navigate(BranchManagerRoutes.Dashboard) {
                                         popUpTo("login") {
                                             inclusive = true
                                         }
@@ -148,7 +147,6 @@ fun LoginContent(
     onLoginClick: () -> Unit,
     onRegisterClick: () -> Unit
 ) {
-
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -226,15 +224,11 @@ fun LoginContent(
             }
         }
     }
-
 }
-
-
 
 @Preview(showBackground = true) //Preview UI
 @Composable
 fun LoginPreview() {
-
     LoginContent(
         email = "",
         password = "",

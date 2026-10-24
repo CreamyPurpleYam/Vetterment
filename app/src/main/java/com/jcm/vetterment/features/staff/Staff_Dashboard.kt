@@ -53,7 +53,6 @@ fun StaffDashboardScreen(
     }
 
     LaunchedEffect(Unit) {
-
         isLoading = true
         errorMessage = ""
 
@@ -74,7 +73,6 @@ fun StaffDashboardScreen(
                 GetCaseData.getAllCases()
 
             activeCases = loadedCases.filter {
-
                 it.current_status != "COMPLETED" &&
                         it.current_status != "DISCHARGED"
             }
@@ -88,10 +86,9 @@ fun StaffDashboardScreen(
 
                 val progress =
                     GetCaseData.getProgressForCase(
-                        currentCase.id!!
+                        currentCase.id ?: return@forEach
                     )
                 if (progress.isNotEmpty()) {
-
                     val latest =
                         progress.maxByOrNull {
                             it.recorded_at ?: ""
@@ -189,7 +186,6 @@ fun StaffDashboardContent(
     needsAttentionCases: List<Case>,
     recentProgress: List<Pair<CaseProgress, Pet?>>
 ) {
-
     StaffScaffold(
         navController = navController
     ) { innerPadding ->
@@ -228,7 +224,6 @@ fun StaffDashboardContent(
 
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
@@ -340,11 +335,11 @@ fun StaffDashboardContent(
                                 NeedsAttentionCard(
                                     case = it,
                                     onClick = {
-                                        navController.navigate(
-                                            CaseRoutes.caseDetails(
-                                                it.id!!
+                                        it.id?.let { id ->
+                                            navController.navigate(
+                                                CaseRoutes.caseDetails(id)
                                             )
-                                        )
+                                        }
                                     }
                                 )
                             }
@@ -365,11 +360,11 @@ fun StaffDashboardContent(
                                 AppointmentCard(
                                     appointment = it,
                                     onClick = {
-                                        navController.navigate(
-                                            AppointmentRoutes.appointmentDetail(
-                                                it.id!!
+                                        it.id?.let { id ->
+                                            navController.navigate(
+                                                AppointmentRoutes.appointmentDetail(id)
                                             )
-                                        )
+                                        }
                                     }
                                 )
                             }
@@ -409,11 +404,9 @@ private fun DashboardSection(
     title: String,
     content: @Composable ColumnScope.() -> Unit
 ) {
-
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
@@ -430,16 +423,13 @@ private fun DashboardStatCard(
     title: String,
     value: String
 ) {
-
     ElevatedCard(
         modifier = modifier
     ) {
-
         Column(
             modifier = Modifier
                 .padding(16.dp)
         ) {
-
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium
@@ -464,18 +454,15 @@ private fun QuickActionCard(
     subtitle: String,
     onClick: () -> Unit
 ) {
-
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth(),
         onClick = onClick
     ) {
-
         Column(
             modifier = Modifier
                 .padding(16.dp)
         ) {
-
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium
@@ -499,22 +486,18 @@ private fun NeedsAttentionCard(
     case: Case,
     onClick: () -> Unit
 ) {
-
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick
     ) {
-
         Row(
             modifier = Modifier
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-
                 Text(
                     text = case.case_type
                         .lowercase()
@@ -550,16 +533,13 @@ private fun RecentActivityCard(
     progress: CaseProgress,
     pet: Pet?
 ) {
-
     ElevatedCard(
         modifier = Modifier.fillMaxWidth()
     ) {
-
         Column(
             modifier = Modifier
                 .padding(16.dp)
         ) {
-
             Text(
                 text = pet?.name ?: "Unknown Patient",
                 style = MaterialTheme.typography.titleMedium
@@ -577,7 +557,6 @@ private fun RecentActivityCard(
             progress.notes
                 ?.takeIf { it.isNotBlank() }
                 ?.let {
-
                     Spacer(
                         modifier = Modifier.height(4.dp)
                     )
@@ -591,7 +570,6 @@ private fun RecentActivityCard(
 
             progress.recorded_at
                 ?.let {
-
                     Spacer(
                         modifier = Modifier.height(6.dp)
                     )

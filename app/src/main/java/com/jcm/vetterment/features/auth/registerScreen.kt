@@ -50,7 +50,6 @@ import com.jcm.vetterment.features.data_models.Profile
 fun RegisterScreen( //Logic Layer
     navController: NavController
 ) {
-
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -110,7 +109,6 @@ fun RegisterScreen( //Logic Layer
                                 SupabaseClient.client.auth.currentUserOrNull()
 
                             if (user != null) {
-
                                 val profile = Profile(
                                     id = user.id,
                                     full_name = formattedName,
@@ -128,7 +126,6 @@ fun RegisterScreen( //Logic Layer
                             navController.popBackStack()
                         } catch (e: Exception){
                             errorMessage = when {
-
                                 e.message?.contains("email_address_invalid") == true ->
                                     "Please enter a valid email address."
 
@@ -154,7 +151,6 @@ fun RegisterScreen( //Logic Layer
         }
     )
 }
-
 
 @Composable
 fun RegisterContent(
@@ -274,7 +270,6 @@ fun RegisterContent(
 @Preview(showBackground = true) //Preview Layer
 @Composable
 fun RegisterPreview() {
-
     RegisterContent(
         fullName = "",
         email = "",

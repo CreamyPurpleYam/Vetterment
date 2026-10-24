@@ -149,7 +149,6 @@ private fun PetOwnerCaseDetailBody(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-
         // ── Pet summary card ──────────────────────────────────────────────
         if (pet != null) {
             Card(modifier = Modifier.fillMaxWidth()) {

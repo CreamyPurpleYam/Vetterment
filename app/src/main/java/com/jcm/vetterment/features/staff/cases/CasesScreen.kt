@@ -64,7 +64,7 @@ fun CasesScreen(navController: NavController) {
         vets = vets,
         isLoading = isLoading,
         errorMessage = errorMessage,
-        onCaseClick = { navController.navigate(CaseRoutes.caseDetails(it.id!!)) },
+        onCaseClick = { it.id?.let { id -> navController.navigate(CaseRoutes.caseDetails(id)) } },
         onCreateCaseClick = { navController.navigate(CaseRoutes.SearchPetForCase) }
     )
 }
@@ -213,9 +213,7 @@ fun CaseCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Column(modifier = Modifier.weight(1f)) {
-
                 Text(
                     text = case.case_type.lowercase()
                         .replaceFirstChar { it.uppercase() },

@@ -170,7 +170,6 @@ private fun PetOwnerAppointmentDetailBody(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-
         // ── Status chip ───────────────────────────────────────────────────
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -232,6 +231,32 @@ private fun PetOwnerAppointmentDetailBody(
         }
         appointment.notes?.takeIf { it.isNotBlank() }?.let {
             OwnerDetailRow("Clinic Notes", it)
+        }
+
+        // Doctor fee for Consultation appointments
+        if (appointment.appointment_type == "CONSULTATION") {
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Doctor's Fee", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("₱400", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                    Text(
+                        "Payable at clinic",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
         }
 
         // ── Status message ────────────────────────────────────────────────

@@ -19,7 +19,6 @@ import com.jcm.vetterment.supabase.GetAppointmentData
 
 @Composable
 fun AppointmentsScreen(navController: NavController) {
-
     var appointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
@@ -43,7 +42,7 @@ fun AppointmentsScreen(navController: NavController) {
         isLoading = isLoading,
         errorMessage = errorMessage,
         onAppointmentClick = {
-            navController.navigate(AppointmentRoutes.appointmentDetail(it.id!!))
+            it.id?.let { id -> navController.navigate(AppointmentRoutes.appointmentDetail(id)) }
         }
     )
 }
@@ -74,7 +73,6 @@ fun AppointmentsContent(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 16.dp)
         ) {
-
             Text("Appointments", style = MaterialTheme.typography.headlineMedium)
             Spacer(modifier = Modifier.height(12.dp))
 

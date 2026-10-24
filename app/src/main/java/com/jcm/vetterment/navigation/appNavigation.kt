@@ -9,6 +9,9 @@ import com.jcm.vetterment.features.auth.RegisterScreen
 import com.jcm.vetterment.features.branchmanager.BranchManagerDashboardScreen
 import com.jcm.vetterment.features.branchmanager.CreateStaffScreen
 import com.jcm.vetterment.features.branchmanager.StaffListScreen
+import com.jcm.vetterment.features.branchmanager.BranchManagerPatientsScreen
+import com.jcm.vetterment.features.branchmanager.BranchManagerAppointmentsScreen
+import com.jcm.vetterment.features.branchmanager.BranchManagerProfileScreen
 import com.jcm.vetterment.features.pet_owner.BookAppointmentScreen
 import com.jcm.vetterment.features.pet_owner.MyPetsScreen
 import com.jcm.vetterment.features.pet_owner.PetOwner_Dashboard
@@ -18,6 +21,7 @@ import com.jcm.vetterment.features.pet_owner.PetOwnerCaseDetailScreen
 import com.jcm.vetterment.features.pet_owner.PetOwnerCasesScreen
 import com.jcm.vetterment.features.pet_owner.PetOwnerMedicationsScreen
 import com.jcm.vetterment.features.pet_owner.PetOwnerPetDetailScreen
+import com.jcm.vetterment.features.pet_owner.PaymentProcessingScreen
 import com.jcm.vetterment.features.pet_owner.PetOwnerProfileScreen
 import com.jcm.vetterment.features.staff.StaffDashboardScreen
 import com.jcm.vetterment.features.staff.StaffProfileScreen
@@ -40,7 +44,6 @@ fun appNavigation() {
         navController = navController,
         startDestination = "login"
     ) {
-
         // ── Auth ──────────────────────────────────────────────────────────────
         composable("login") {
             LoginScreen(navController)
@@ -71,6 +74,16 @@ fun appNavigation() {
         composable(PetOwnerRoutes.BookAppointment) {
             BookAppointmentScreen(navController)
         }
+        composable(PetOwnerRoutes.PaymentProcessing) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId")
+                ?: return@composable
+            val isCancel = backStackEntry.arguments?.getString("isCancel") == "true"
+            PaymentProcessingScreen(
+                orderId = orderId,
+                isCancel = isCancel,
+                navController = navController
+            )
+        }
         composable(PetOwnerRoutes.CaseDetail) { backStackEntry ->
             val caseId = backStackEntry.arguments?.getString("caseId")
                 ?: return@composable
@@ -91,9 +104,6 @@ fun appNavigation() {
         }
 
         // ── Branch Manager ────────────────────────────────────────────────────
-        composable("branch_manager") {
-            BranchManagerDashboardScreen(navController)
-        }
         composable(BranchManagerRoutes.Dashboard) {
             BranchManagerDashboardScreen(navController)
         }
@@ -102,6 +112,15 @@ fun appNavigation() {
         }
         composable(BranchManagerRoutes.CreateStaffAccount) {
             CreateStaffScreen(navController)
+        }
+        composable(BranchManagerRoutes.Patients) {
+            BranchManagerPatientsScreen(navController)
+        }
+        composable(BranchManagerRoutes.Appointments) {
+            BranchManagerAppointmentsScreen(navController)
+        }
+        composable(BranchManagerRoutes.Profile) {
+            BranchManagerProfileScreen(navController)
         }
 
         // ── Staff — Dashboard ─────────────────────────────────────────────────

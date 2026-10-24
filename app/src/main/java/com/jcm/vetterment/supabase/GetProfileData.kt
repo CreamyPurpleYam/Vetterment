@@ -7,7 +7,6 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 
 object GetProfileData {
-
     suspend fun getCurrentProfile(): Profile? {
         val user = SupabaseClient.client.auth.currentUserOrNull() ?: return null
         return try {
@@ -68,7 +67,7 @@ object GetProfileData {
                 .from("profiles")
                 .select { filter { isIn("id", profileIds) } }
                 .decodeList<Profile>()
-            profiles.associateBy { it.id!! }
+            profiles.mapNotNull { p -> p.id?.let { id -> id to p } }.toMap()
         } catch (e: Exception) {
             e.printStackTrace()
             emptyMap()
@@ -107,7 +106,6 @@ object GetProfileData {
         password: String,
         role: String
     ): String? {
-
         val normalizedRole = role.trim().lowercase()
         if (normalizedRole !in listOf("vet", "nurse", "assistant_vet")) return null
 
@@ -134,6 +132,63 @@ object GetProfileData {
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    // ─── Staff management - Update/Delete (Branch Manager only) ──────────────────
+
+    /**
+     * Updates a staff member's profile information.
+     * Only allows updating full_name and role for security.
+     */
+    suspend fun updateStaffProfile(
+        profileId: String,
+        fullName: String? = null,
+        role: String? = null
+    ): Result<Boolean> {
+        if (profileId.isBlank()) return Result.failure(IllegalArgumentException("Profile ID is blank"))
+
+        val updates = mutableMapOf<String, Any?>()
+        fullName?.let { updates["full_name"] = it.trim().takeIf { it.isNotBlank() } }
+        role?.let {
+            val normalizedRole = it.trim().lowercase()
+            if (normalizedRole in listOf("vet", "nurse", "assistant_vet", "branch_manager")) {
+                updates["role"] = normalizedRole
+            }
+        }
+
+        if (updates.isEmpty()) return Result.failure(IllegalArgumentException("No valid updates provided"))
+
+        return try {
+            SupabaseClient.client
+                .from("profiles")
+                .update(updates) {
+                    filter { eq("id", profileId) }
+                }
+            Result.success(true)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Deletes a staff member's profile.
+     * This should be used with caution - consider deactivating instead.
+     */
+    suspend fun deleteStaffProfile(profileId: String): Boolean {
+        if (profileId.isBlank()) return false
+
+        return try {
+            SupabaseClient.client
+                .from("profiles")
+                .delete {
+                    filter { eq("id", profileId) }
+                }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 }
