@@ -270,7 +270,7 @@ fun MyPetsScreen(navController: NavController) {
 
         errorMessage = errorMessage,
 
-        onPetClick = { navController.navigate(PetOwnerRoutes.petDetail(it.id!!)) },
+        onPetClick = { it.id?.let { id -> navController.navigate(PetOwnerRoutes.petDetail(id)) } },
 
         onAddPetClick = { showAddPetDialog = true }
 

@@ -45,7 +45,7 @@ object GetCaseData {
 
             // Insert the first progress entry
             insertProgress(
-                caseId = created.id!!,
+                caseId = created.id ?: return null,
                 status = initialStatus,
                 notes = "Case opened.",
                 recordedBy = currentUser.id
@@ -92,7 +92,7 @@ object GetCaseData {
                 .decodeSingle<Case>()
 
             insertProgress(
-                caseId = created.id!!,
+                caseId = created.id ?: return null,
                 status = initialStatus,
                 notes = "Follow-up case opened.",
                 recordedBy = currentUser.id

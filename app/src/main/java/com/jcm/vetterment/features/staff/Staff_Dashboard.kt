@@ -86,7 +86,7 @@ fun StaffDashboardScreen(
 
                 val progress =
                     GetCaseData.getProgressForCase(
-                        currentCase.id!!
+                        currentCase.id ?: return@forEach
                     )
                 if (progress.isNotEmpty()) {
                     val latest =
@@ -335,11 +335,11 @@ fun StaffDashboardContent(
                                 NeedsAttentionCard(
                                     case = it,
                                     onClick = {
-                                        navController.navigate(
-                                            CaseRoutes.caseDetails(
-                                                it.id!!
+                                        it.id?.let { id ->
+                                            navController.navigate(
+                                                CaseRoutes.caseDetails(id)
                                             )
-                                        )
+                                        }
                                     }
                                 )
                             }
@@ -360,11 +360,11 @@ fun StaffDashboardContent(
                                 AppointmentCard(
                                     appointment = it,
                                     onClick = {
-                                        navController.navigate(
-                                            AppointmentRoutes.appointmentDetail(
-                                                it.id!!
+                                        it.id?.let { id ->
+                                            navController.navigate(
+                                                AppointmentRoutes.appointmentDetail(id)
                                             )
-                                        )
+                                        }
                                     }
                                 )
                             }

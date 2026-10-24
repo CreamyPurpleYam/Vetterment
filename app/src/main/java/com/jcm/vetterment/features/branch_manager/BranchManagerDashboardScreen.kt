@@ -86,7 +86,7 @@ fun BranchManagerDashboardScreen(navController: NavController) {
         onViewAppointmentsClick = { navController.navigate(AppointmentRoutes.Appointments) },
         onViewStaffClick = { navController.navigate(BranchManagerRoutes.StaffList) },
         onCreateStaffClick = { navController.navigate(BranchManagerRoutes.CreateStaffAccount) },
-        onCaseClick = { navController.navigate(CaseRoutes.caseDetails(it.id!!)) },
+        onCaseClick = { it.id?.let { id -> navController.navigate(CaseRoutes.caseDetails(id)) } },
         onViewPatientsClick = { navController.navigate(StaffRoutes.Patients) }
     )
 }

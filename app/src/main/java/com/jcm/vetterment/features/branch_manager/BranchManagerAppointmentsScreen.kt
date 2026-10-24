@@ -4,8 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -45,7 +43,7 @@ fun BranchManagerAppointmentsScreen(navController: NavController) {
         appointments = appointments,
         isLoading = isLoading,
         errorMessage = errorMessage,
-        onAppointmentClick = { navController.navigate(CaseRoutes.caseDetails(it.id!!)) },
+        onAppointmentClick = { it.id?.let { id -> navController.navigate(CaseRoutes.caseDetails(id)) } },
         onRefresh = { /* refresh handled by LaunchedEffect */ }
     )
 }
@@ -64,7 +62,6 @@ fun BranchManagerAppointmentsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -93,6 +90,7 @@ fun BranchManagerAppointmentsContent(
             }
 
             LazyColumn(
+                modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp)
             ) {

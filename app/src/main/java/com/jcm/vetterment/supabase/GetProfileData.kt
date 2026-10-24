@@ -67,7 +67,7 @@ object GetProfileData {
                 .from("profiles")
                 .select { filter { isIn("id", profileIds) } }
                 .decodeList<Profile>()
-            profiles.associateBy { it.id!! }
+            profiles.mapNotNull { p -> p.id?.let { id -> id to p } }.toMap()
         } catch (e: Exception) {
             e.printStackTrace()
             emptyMap()

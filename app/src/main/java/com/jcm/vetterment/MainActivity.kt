@@ -33,6 +33,7 @@ import com.jcm.vetterment.features.pet_owner.PetOwnerCaseDetailScreen
 import com.jcm.vetterment.features.pet_owner.PetOwnerCasesScreen
 import com.jcm.vetterment.features.pet_owner.PetOwnerMedicationsScreen
 import com.jcm.vetterment.features.pet_owner.PetOwnerPetDetailScreen
+import com.jcm.vetterment.features.pet_owner.PaymentProcessingScreen
 import com.jcm.vetterment.features.pet_owner.PetOwnerProfileScreen
 import com.jcm.vetterment.features.staff.StaffDashboardScreen
 import com.jcm.vetterment.features.staff.StaffProfileScreen
@@ -129,6 +130,16 @@ fun AppRoot() {
             }
             composable(PetOwnerRoutes.BookAppointment) {
                 BookAppointmentScreen(navController)
+            }
+            composable(PetOwnerRoutes.PaymentProcessing) { backStackEntry ->
+                val orderId = backStackEntry.arguments?.getString("orderId")
+                    ?: return@composable
+                val isCancel = backStackEntry.arguments?.getString("isCancel") == "true"
+                PaymentProcessingScreen(
+                    orderId = orderId,
+                    isCancel = isCancel,
+                    navController = navController
+                )
             }
             composable(PetOwnerRoutes.CaseDetail) { backStackEntry ->
                 val caseId = backStackEntry.arguments?.getString("caseId")

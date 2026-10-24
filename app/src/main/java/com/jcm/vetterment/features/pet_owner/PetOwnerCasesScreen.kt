@@ -57,7 +57,7 @@ fun PetOwnerCasesScreen(navController: NavController) {
         casesWithPets = casesWithPets,
         isLoading = isLoading,
         errorMessage = errorMessage,
-        onCaseClick = { navController.navigate(PetOwnerRoutes.caseDetail(it.id!!)) }
+        onCaseClick = { it.id?.let { id -> navController.navigate(PetOwnerRoutes.caseDetail(id)) } }
     )
 }
 

@@ -102,7 +102,7 @@ fun PetOwnerAppointmentsScreen(navController: NavController) {
 
         onAppointmentClick = {
 
-            navController.navigate(PetOwnerRoutes.appointmentDetail(it.id!!))
+            it.id?.let { id -> navController.navigate(PetOwnerRoutes.appointmentDetail(id)) }
 
         },
 

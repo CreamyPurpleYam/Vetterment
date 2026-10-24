@@ -153,7 +153,7 @@ object GetPetData {
                 }
                 .decodeList<Pet>()
 
-            pets.associateBy { it.id!! }
+            pets.mapNotNull { pet -> pet.id?.let { id -> id to pet } }.toMap()
         } catch (e: Exception) {
             e.printStackTrace()
             emptyMap()

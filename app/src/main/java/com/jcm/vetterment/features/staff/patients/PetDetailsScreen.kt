@@ -89,7 +89,7 @@ fun PetDetailsScreen(
         isLoading = isLoading,
         errorMessage = errorMessage,
         onBackClick = { navController.popBackStack() },
-        onCaseClick = { navController.navigate(CaseRoutes.caseDetails(it.id!!)) },
+        onCaseClick = { it.id?.let { id -> navController.navigate(CaseRoutes.caseDetails(id)) } },
         onEditClick = { showEditDialog = true }
     )
 }

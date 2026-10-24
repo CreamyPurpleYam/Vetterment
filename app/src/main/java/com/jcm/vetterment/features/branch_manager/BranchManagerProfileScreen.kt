@@ -20,6 +20,7 @@ import com.jcm.vetterment.features.auth.formatName
 import com.jcm.vetterment.features.data_models.Profile
 import com.jcm.vetterment.supabase.GetProfileData
 import com.jcm.vetterment.supabase.SupabaseClient
+import kotlinx.coroutines.launch
 
 @Composable
 fun BranchManagerProfileScreen(navController: NavController) {
@@ -27,6 +28,7 @@ fun BranchManagerProfileScreen(navController: NavController) {
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf("") }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         isLoading = true
@@ -44,8 +46,13 @@ fun BranchManagerProfileScreen(navController: NavController) {
     val onLogoutClick = { showLogoutDialog = true }
     val onLogoutConfirm = {
         showLogoutDialog = false
-        // SupabaseClient.client.auth.signOut() - API varies by version
-        navController.navigate("login") {
+        scope.launch {
+            try {
+                SupabaseClient.client.auth.signOut()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            navController.navigate("login") {
             popUpTo("login") { inclusive = true }
             launchSingleTop = true
             restoreState = false

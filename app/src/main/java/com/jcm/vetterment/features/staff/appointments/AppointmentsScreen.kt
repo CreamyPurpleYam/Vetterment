@@ -42,7 +42,7 @@ fun AppointmentsScreen(navController: NavController) {
         isLoading = isLoading,
         errorMessage = errorMessage,
         onAppointmentClick = {
-            navController.navigate(AppointmentRoutes.appointmentDetail(it.id!!))
+            it.id?.let { id -> navController.navigate(AppointmentRoutes.appointmentDetail(id)) }
         }
     )
 }

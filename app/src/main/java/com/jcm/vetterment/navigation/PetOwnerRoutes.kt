@@ -18,4 +18,7 @@ object PetOwnerRoutes {
     const val BookAppointment = "pet_owner_book_appointment"
     const val PetDetail = "pet_owner_pet_detail/{petId}"
     fun petDetail(petId: String) = "pet_owner_pet_detail/$petId"
+    const val PaymentProcessing = "pet_owner_payment_processing/{orderId}/{isCancel}"
+    fun paymentProcessing(orderId: String, isCancel: Boolean) =
+        "pet_owner_payment_processing/$orderId/$isCancel"
 }
