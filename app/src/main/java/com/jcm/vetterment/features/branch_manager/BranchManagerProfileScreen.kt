@@ -20,6 +20,7 @@ import com.jcm.vetterment.features.auth.formatName
 import com.jcm.vetterment.features.data_models.Profile
 import com.jcm.vetterment.supabase.GetProfileData
 import com.jcm.vetterment.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
 
 @Composable
@@ -53,9 +54,10 @@ fun BranchManagerProfileScreen(navController: NavController) {
                 e.printStackTrace()
             }
             navController.navigate("login") {
-            popUpTo("login") { inclusive = true }
-            launchSingleTop = true
-            restoreState = false
+                popUpTo("login") { inclusive = true }
+                launchSingleTop = true
+                restoreState = false
+            }
         }
     }
 
