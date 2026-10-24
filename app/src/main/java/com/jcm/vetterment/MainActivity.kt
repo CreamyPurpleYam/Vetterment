@@ -21,7 +21,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.jcm.vetterment.features.auth.LoginScreen
 import com.jcm.vetterment.features.auth.RegisterScreen
+import com.jcm.vetterment.features.branchmanager.BranchManagerAppointmentsScreen
 import com.jcm.vetterment.features.branchmanager.BranchManagerDashboardScreen
+import com.jcm.vetterment.features.branchmanager.BranchManagerPatientsScreen
+import com.jcm.vetterment.features.branchmanager.BranchManagerProfileScreen
 import com.jcm.vetterment.features.branchmanager.CreateStaffScreen
 import com.jcm.vetterment.features.branchmanager.StaffListScreen
 import com.jcm.vetterment.features.pet_owner.BookAppointmentScreen
@@ -172,6 +175,15 @@ fun AppRoot() {
             }
             composable(BranchManagerRoutes.CreateStaffAccount) {
                 CreateStaffScreen(navController)
+            }
+            composable(BranchManagerRoutes.Patients) {
+                BranchManagerPatientsScreen(navController)
+            }
+            composable(BranchManagerRoutes.Appointments) {
+                BranchManagerAppointmentsScreen(navController)
+            }
+            composable(BranchManagerRoutes.Profile) {
+                BranchManagerProfileScreen(navController)
             }
 
             // ── Staff — Dashboard ─────────────────────────────────────────────────
