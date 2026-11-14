@@ -94,16 +94,16 @@ fun LoginScreen(navController: NavController)
                                     }
                                 }
 
-                                Roles.isStaff(role) -> {
-                                    navController.navigate(StaffRoutes.Dashboard) {
+                                role == Roles.HEAD_VET || role == "branch_manager" || role == Roles.ADMIN -> {
+                                    navController.navigate(BranchManagerRoutes.Dashboard) {
                                         popUpTo("login") {
                                             inclusive = true
                                         }
                                     }
                                 }
 
-                                role == Roles.HEAD_VET || role == "branch_manager" -> {
-                                    navController.navigate(BranchManagerRoutes.Dashboard) {
+                                Roles.isStaff(role) -> {
+                                    navController.navigate(StaffRoutes.Dashboard) {
                                         popUpTo("login") {
                                             inclusive = true
                                         }

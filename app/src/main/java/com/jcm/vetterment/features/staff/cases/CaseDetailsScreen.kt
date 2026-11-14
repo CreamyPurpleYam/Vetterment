@@ -232,7 +232,8 @@ fun CaseDetailsContent(
 ) {
     val isCompleted = case?.current_status in listOf("COMPLETED", "DISCHARGED")
     val isClaimed = case?.assigned_vet_id != null
-    val canEdit = isClaimed && !isCompleted
+    val isVet = Roles.isVetLevel(currentProfile?.role)
+    val canEdit = isClaimed && !isCompleted && isVet
 
     Scaffold(
         topBar = {
@@ -423,7 +424,8 @@ private fun CaseDetailsBody(
                     )
                 }
             } else {
-                val nextStatus = if (currentIndex < stages.lastIndex)
+                val isVet = Roles.isVetLevel(currentProfile?.role)
+                val nextStatus = if (isVet && currentIndex < stages.lastIndex)
                     CaseStages.displayName(stages[currentIndex + 1]) else null
                 if (nextStatus != null) {
                     Button(

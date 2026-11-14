@@ -87,8 +87,8 @@ fun AppRoot() {
             val role = GetProfileData.getCurrentRole()
             initialDestination.value = when {
                 role == Roles.PET_OWNER -> "pet_owner"
+                role == Roles.HEAD_VET || role == "branch_manager" || role == Roles.ADMIN -> BranchManagerRoutes.Dashboard
                 Roles.isStaff(role) -> StaffRoutes.Dashboard
-                Roles.isStaffManager(role) || role == Roles.HEAD_VET -> BranchManagerRoutes.Dashboard
                 else -> "login"
             }
         }
