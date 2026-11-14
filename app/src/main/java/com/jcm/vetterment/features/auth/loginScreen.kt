@@ -39,6 +39,7 @@ import com.jcm.vetterment.features.components.VettermentError
 import com.jcm.vetterment.features.components.VettermentOutlinedTextField
 import com.jcm.vetterment.features.components.VettermentSecondary
 import com.jcm.vetterment.features.components.VettermentTitle
+import com.jcm.vetterment.features.data_models.Roles
 import com.jcm.vetterment.navigation.BranchManagerRoutes
 import com.jcm.vetterment.navigation.StaffRoutes
 import com.jcm.vetterment.supabase.GetProfileData
@@ -84,8 +85,8 @@ fun LoginScreen(navController: NavController)
                                 this.password = password
                             }
                             val role = GetProfileData.getCurrentRole()
-                            when(role) {
-                                "pet_owner" -> {
+                            when {
+                                role == Roles.PET_OWNER -> {
                                     navController.navigate("pet_owner") {
                                         popUpTo("login") {
                                             inclusive = true
@@ -93,9 +94,7 @@ fun LoginScreen(navController: NavController)
                                     }
                                 }
 
-                                "vet",
-                                "assistant_vet",
-                                "nurse" -> {
+                                Roles.isStaff(role) -> {
                                     navController.navigate(StaffRoutes.Dashboard) {
                                         popUpTo("login") {
                                             inclusive = true
@@ -103,7 +102,7 @@ fun LoginScreen(navController: NavController)
                                     }
                                 }
 
-                                "branch_manager" -> {
+                                role == Roles.HEAD_VET || role == "branch_manager" -> {
                                     navController.navigate(BranchManagerRoutes.Dashboard) {
                                         popUpTo("login") {
                                             inclusive = true

@@ -16,11 +16,20 @@ fun DatePickerField(
     value: String,
     label: String,
     errorMessage: String = "",
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+    allowPastDates: Boolean = false
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
 
-    val datePickerState = rememberDatePickerState()
+    val datePickerState = rememberDatePickerState(
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                if (allowPastDates) return true
+                // Booking dates: today and future only
+                return utcTimeMillis >= System.currentTimeMillis() - 24 * 60 * 60 * 1000
+            }
+        }
+    )
 
     Box(
         modifier = Modifier.fillMaxWidth()

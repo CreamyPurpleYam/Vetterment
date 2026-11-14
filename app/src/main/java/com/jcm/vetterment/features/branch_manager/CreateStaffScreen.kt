@@ -13,6 +13,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.jcm.vetterment.features.auth.formatName
+import com.jcm.vetterment.features.data_models.Roles
 import com.jcm.vetterment.supabase.GetProfileData
 
 // ─── Logic layer ──────────────────────────────────────────────────────────────
@@ -160,11 +161,7 @@ fun CreateStaffContent(
     onBackClick: () -> Unit,
     onCreateClick: () -> Unit
 ) {
-    val roles = listOf(
-        "vet" to "Veterinarian",
-        "assistant_vet" to "Assistant Veterinarian",
-        "nurse" to "Nurse"
-    )
+    val roles = Roles.CREATABLE_STAFF_ROLES.map { it to Roles.displayName(it) }
 
     Scaffold(
         topBar = {

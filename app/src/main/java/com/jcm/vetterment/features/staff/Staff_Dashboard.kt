@@ -151,7 +151,6 @@ fun StaffDashboardScreen(
     val needsAttention =
         activeCases.filter {
             it.assigned_vet_id == null ||
-                    it.current_status == "WAITING" ||
                     it.current_status == "CHECKED_IN"
         }
 
@@ -516,13 +515,10 @@ private fun NeedsAttentionCard(
                 )
             }
 
-            AssistChip(
-                onClick = {},
-                label = {
-                    Text(
-                        CaseStages.displayName(case.current_status)
-                    )
-                }
+            Text(
+                text = CaseStages.displayName(case.current_status),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

@@ -1458,7 +1458,7 @@ fun AddPetDialog(
 
     var weightText by remember { mutableStateOf("") }
 
-    val petIcons = listOf("🐶", "🐕", "🦮", "🐩", "🐱", "🐈", "🐈‍⬛", "🐰", "🐹", "🐾")
+    val petIcons = listOf("🐶", "🐱")
 
     var selectedIcon by remember { mutableStateOf("🐶") }
 
@@ -1764,7 +1764,7 @@ fun EditPetDialog(
 
     var conditions by remember { mutableStateOf(pet.pre_existing_conditions ?: "") }
 
-    val petIcons = listOf("🐶", "🐕", "🦮", "🐩", "🐱", "🐈", "🐈‍⬛", "🐰", "🐹", "🐾")
+    val petIcons = listOf("🐶", "🐱")
 
     var selectedIcon by remember {
 

@@ -77,6 +77,9 @@ fun PetOwnerCasesContent(
     val completedCases = casesWithPets.filter {
         it.first.current_status in listOf("COMPLETED", "DISCHARGED")
     }
+    val cancelledCases = casesWithPets.filter {
+        it.first.current_status == "CANCELLED"
+    }
 
     PetOwnerScaffold(navController = navController) { innerPadding ->
         Column(
@@ -134,6 +137,19 @@ fun PetOwnerCasesContent(
                         PetOwnerCaseSectionHeader("Completed", completedCases.size)
                     }
                     items(completedCases) { (case, pet) ->
+                        PetOwnerCaseCard(
+                            case = case,
+                            pet = pet,
+                            onClick = { onCaseClick(case) }
+                        )
+                    }
+                }
+
+                if (cancelledCases.isNotEmpty()) {
+                    item {
+                        PetOwnerCaseSectionHeader("Cancelled", cancelledCases.size)
+                    }
+                    items(cancelledCases) { (case, pet) ->
                         PetOwnerCaseCard(
                             case = case,
                             pet = pet,

@@ -1,357 +1,158 @@
-# Claude Instructions --- VETterment Android App
-
-> Read this file before making changes. These notes provide project
-> context and guardrails; always inspect the current repository because
-> code and database state may have changed.
-
-## 1. Project overview
-
-**Project:** VETterment --- A Mobile-Based Veterinary Case Management
-System with 3D Patient Visualization for PetHub Veterinary Clinic.
-
-**Technology:** - Android Studio - Kotlin - Jetpack Compose and Material
-3 - Supabase Auth, Postgres, and potentially Supabase Edge Functions -
-Android application package: `com.jcm.vetterment` - Screens package:
-`com.jcm.vetterment.screens` - Supabase integration package:
-`com.jcm.vetterment.supabase` - Data models have been used under
-`com.jcm.vetterment.features.data_models` - Pet Owner features are under
-`com.jcm.vetterment.features.pet_owner`
-
-Use actual repository paths as the source of truth. The paths above are
-context, not permission to assume a file exists.
-
-This is a standalone Android app for PetHub Veterinary Clinic. It does
-**not** replace or integrate with the clinic's existing confidential
-desktop records system.
-
-## 2. How to work in this repository
-
-The developer is familiar with Java but is still learning Kotlin and
-Jetpack Compose. Explain changes clearly and give exact file paths.
-
--   Start by inspecting the existing implementation before editing.
--   Make small, incremental, reviewable changes. Avoid large rewrites.
--   Prefer targeted patches over replacing entire files.
--   Follow the existing architecture and naming conventions.
--   The UI and logic may be separated into composables/wrapper
-    functions; inspect how the relevant screen is structured before
-    changing it.
--   Reuse existing models, helpers, repositories, components, and
-    navigation where practical.
--   Do not add dependencies unless genuinely necessary; explain why
-    before adding one.
--   Do not invent filenames, models, database columns, routes, or
-    functions.
--   Do not use mock data as if it were real production data.
--   Do not silently change unrelated features.
--   Do not commit, push, deploy, or run destructive database changes
-    unless explicitly asked.
--   After each stage, summarize the files changed and why, and tell the
-    developer what to test.
--   Run a relevant Gradle build when possible, report the actual result,
-    and distinguish new errors from pre-existing errors.
--   If a required file, schema, secret, or environment is inaccessible,
-    say so instead of guessing.
-
-## 3. Current priority: PayPal Sandbox for check-up booking
-
-The current task is to integrate **PayPal Sandbox** into the existing
-Kotlin + Jetpack Compose + Supabase app.
-
-### Business rules
-
--   Only **Check-up** is bookable through the Pet Owner's appointment
-    booking flow.
--   The doctor fee is **₱400**.
--   The owner must complete a successful payment before the appointment
-    booking is submitted.
--   A failed, cancelled, abandoned, or unverified payment must not
-    create a paid appointment.
--   Payment does not guarantee a consultation time or queue priority.
--   PetHub follows a first-come-first-served approach and operates 24/7,
-    including emergencies.
--   Do not create emergency appointments or imply emergency care must
-    wait for app booking.
--   The clinic's ordinary check-up hours were discussed as approximately
-    9 AM--5 PM but are **not confirmed**. Do not hardcode these hours as
-    settled policy.
--   Additional procedure, diagnostic, and surgery charges are handled at
-    the clinic; do not invent or display prices for them.
--   A successful payment does **not automatically mean the appointment
-    is clinic-confirmed**. Keep payment status and appointment status
-    separate.
-
-### Important currency check
-
-The intended fee is ₱400 PHP. Before implementing the final PayPal
-order, verify the current PayPal Sandbox API's support for the intended
-`PHP` currency and the account's transaction configuration. Do not
-silently convert PHP to another currency or mislabel an amount. If
-PayPal's supported currency configuration prevents the intended
-transaction, report the limitation and propose options before changing
-the product requirement.
-
-## 4. PayPal security rules --- mandatory
-
-**Never place PayPal secrets in the Android app.**
-
-Never include a PayPal Client Secret, Supabase service-role key,
-database password, access token, or other private credential in: -
-Kotlin source files - `BuildConfig` - Android resources -
-`local.properties` - Git-tracked configuration - Logs, screenshots, or
-final reports
-
-Use server-side secrets for PayPal credentials, for example Supabase
-Edge Function secrets. Do not print secret values while inspecting
-files. It is acceptable to report the names of environment variables
-referenced.
-
-The Android app must not be trusted to determine: - The authoritative
-amount or currency - The authenticated owner's identity - Whether
-payment succeeded - Whether an order belongs to an appointment - Whether
-an appointment is confirmed
-
-The backend must authenticate the user and validate ownership. Never
-accept a client-provided amount as authoritative.
-
-## 5. Expected payment architecture
-
-Inspect the existing implementation before deciding exact files,
-functions, or schema. A likely secure flow is:
-
-1.  Owner selects their registered pet and starts a Check-up booking.
-2.  App asks a Supabase Edge Function to start payment.
-3.  The Edge Function authenticates the user and validates the
-    pet/booking data.
-4.  The server determines the required amount and currency and creates a
-    PayPal Sandbox order using server-side credentials.
-5.  The server returns only the information the app needs, such as the
-    order ID and approval URL.
-6.  Android opens the PayPal approval URL.
-7.  After approval, PayPal returns the user directly to the Android app
-    using a correctly configured Android App Link or deep link.
-8.  The app treats the return as a signal to continue---not as proof of
-    payment.
-9.  The app calls a server endpoint to capture the order.
-10. The backend verifies the PayPal response, including order
-    association, capture status, amount, and currency.
-11. Only after verified successful capture should the backend record the
-    payment as paid and submit/create the appointment according to the
-    agreed workflow.
-12. The app refreshes state from the backend.
-
-Use the PayPal Orders API's supported create-order, buyer-approval, and
-server-side capture flow. Consider webhook reconciliation for cases
-where the user closes the app or loses connectivity. Do not add a
-webhook merely for appearance; implement and verify it correctly if
-required.
-
-### Reliability and duplicate prevention
-
--   Handle repeated button taps and network retries.
--   Prevent duplicate captures and duplicate appointment submissions.
--   Use stable PayPal order IDs and server-side idempotency/duplicate
-    checks where supported.
--   Treat cancelled checkout, failed capture, timeout, and unknown
-    payment status safely.
--   Do not mark payment `PAID` just because the app receives a deep
-    link.
--   Do not leave the app displaying success when the backend has not
-    confirmed payment.
--   Design the payment/booking state transition so a successful capture
-    followed by a network failure can be recovered without charging or
-    booking twice.
-
-## 6. Inspect before implementation
-
-At the start of the PayPal task, inspect and report the actual files and
-behavior for:
-
-### Android
-
--   Appointment model and status values
--   Pet Owner Appointments screen and booking form
--   Appointment repository/helper and Supabase queries
--   Supabase client/auth setup
--   Existing payment-related code
--   Existing browser/Custom Tab handling
--   Android manifest, intent filters, deep links, or App Links
--   Relevant Gradle dependencies
-
-### Supabase
-
--   Existing Edge Functions and their configuration
--   SQL migrations and schema files in the repository
--   Appointment table columns, constraints, triggers, and RLS policies
--   Existing payment table/columns and payment-related policies
--   Existing webhook or server-side payment verification code
--   Any existing Maya or other payment integration
-
-Do not assume local migration files exactly match the deployed Supabase
-database. Clearly distinguish what was verified from repository files
-and what still needs checking in the Supabase dashboard.
-
-Do not read or print secret values during inspection.
-
-### Inspection-first rule
-
-If the repository or Supabase dashboard is not available, explain that
-limitation and ask for the relevant files or safe schema output. Do not
-claim to have inspected code that was not available.
-
-## 7. Database and authorization principles
-
--   Reuse the current appointment/payment schema if it can safely
-    support the workflow.
--   Do not create a new payment table or add columns until the current
-    schema is inspected and the need is justified.
--   Do not modify RLS policies or run migrations automatically without
-    explaining the changes first.
--   Payment records and appointment records must be associated with the
-    correct authenticated owner and selected pet.
--   Enforce authorization on the backend/database, not only by hiding UI
-    elements.
--   Never trust an owner ID supplied by the Android client when the
-    backend can derive it from the authenticated user.
--   Avoid storing unnecessary payment credentials or sensitive payment
-    data.
--   Store only the transaction identifiers and status information needed
-    by the application.
--   Keep payment status separate from appointment/clinical status.
-
-## 8. Android checkout return
-
-The requirement is to return **directly to the VETterment Android app**
-after PayPal approval.
-
-Before implementing: - Inspect the existing `AndroidManifest.xml` and
-navigation setup. - Choose a suitable verified Android App Link or a
-carefully configured deep link based on the existing app. - Make sure
-the callback can identify the relevant order without treating URL
-parameters as trusted proof of payment. - Validate incoming link data
-and prevent unrelated links from triggering payment actions. - Resume by
-asking the backend to verify/capture the order. - Handle cancellation
-and return paths as well as successful approval. - Do not embed PayPal
-secrets in the return URL. - Do not assume the app will remain alive
-while the owner is in the browser.
-
-Use a Custom Tab or browser flow if appropriate for the current
-architecture. Do not add an unrelated native PayPal SDK without first
-checking the current PayPal integration guidance and the simplest secure
-approach.
-
-## 9. Existing Pet Profile Details screen
-
-**The Pet Details screen is acceptable for now. Do not redesign or
-refactor it.**
-
-Do not make changes to the Pet Details screen, its layout, validation,
-or pet-information display as part of the PayPal integration unless a
-specific dependency is demonstrated and the developer approves the scope
-change.
-
-Do not revisit the recent Pet Profile Overview refinements during the
-payment task. Keep the work focused on payment and appointment booking.
-
-## 10. UI wording and clinic workflow
-
-For Pet Owners: - Prefer clear labels such as **Appointments**,
-**Medical Records**, and **Treatment Progress**. - Avoid using **Cases**
-as the main Pet Owner-facing label for medical history; it is internal
-clinical terminology. - Keep internal database table names and Kotlin
-model names if they are otherwise appropriate; do not rename them solely
-to change UI wording. - Do not confuse appointment booking with an
-actual completed visit or medical record. - Do not create fake medical
-records at payment time. - Do not equate payment success with staff
-confirmation, arrival, check-in, or queue priority.
-
-## 11. Roles and privacy context
-
-The project has these roles: - Admin: technical maintenance of the
-codebase, database, and system. - Head Veterinarian: clinical oversight
-and main case handler. - Veterinarian. - Clinical Staff. - Pet Owner.
-
-Use existing role and authorization implementation as the source of
-truth. Do not invent new roles or broaden access. Enforce sensitive
-access in Supabase policies/backend functions as well as the UI.
-
-Pet Owners should not directly edit authoritative clinical information
-such as known allergies or pre-existing conditions. This is context
-only; do not change the Pet Details screen as part of the PayPal task.
-
-## 12. Recommended implementation stages
-
-Do not implement everything in one large change. Use the following
-sequence and pause after each stage for review.
-
-### Stage 1 --- Inspection only
-
-Report existing files, schemas, booking sequence, payment support,
-security gaps, and exact proposed changes. Do not edit files.
-
-### Stage 2 --- Backend configuration and order creation
-
-Configure Sandbox credentials securely and implement only the
-server-side create-order endpoint. Do not expose secrets. Test order
-creation before changing the UI.
-
-### Stage 3 --- Capture and verified payment state
-
-Implement secure server-side capture, ownership/order validation,
-duplicate protection, and persistence of verified payment state. Decide
-how to handle successful capture followed by appointment submission
-failure.
-
-### Stage 4 --- Android checkout and return
-
-Add the smallest necessary Android changes to open the approval URL and
-return to the app. Handle approval, cancellation, and interrupted flows.
-Do not mark payment paid based on the return link.
-
-### Stage 5 --- Appointment submission after payment
-
-Make sure the appointment is created/submitted only after verified
-successful payment. Keep the amount fixed/authoritative on the server
-and keep payment status distinct from appointment confirmation.
-
-### Stage 6 --- Testing and review
-
-Test successful payment, cancellation, failed capture, retry, repeated
-requests, app closure, deep-link validation, wrong-owner access, and
-duplicate booking prevention. Build the Android app and report actual
-results.
-
-For each stage: - List exact files changed. - Explain the purpose of
-each change. - Provide any required Supabase CLI commands or dashboard
-steps. - Explain how to test before continuing. - Stop and wait for
-review when a major decision or schema change is needed.
-
-## 13. Final checklist
-
-Before considering PayPal Sandbox integration complete, confirm:
-
--   [ ] PayPal credentials exist only in server-side secret storage.
--   [ ] Android never decides that payment succeeded by itself.
--   [ ] The server controls the amount and currency.
--   [ ] PHP currency support and the intended ₱400 amount have been
-    verified.
--   [ ] Only the authenticated owner can pay for their own eligible
-    booking.
--   [ ] PayPal approval returns to VETterment.
--   [ ] Return/deep-link parameters are not trusted as proof of payment.
--   [ ] Server-side capture and verification work.
--   [ ] Duplicate requests cannot create duplicate payment/appointment
-    records.
--   [ ] Payment status and appointment confirmation are distinct.
--   [ ] Failed or cancelled payments are not marked paid.
--   [ ] Successful payments can be reconciled if the app closes or the
-    network fails.
--   [ ] Existing booking behavior and unrelated features remain intact.
--   [ ] Pet Details screen remains unchanged.
--   [ ] Build and test outcomes are reported accurately.
--   [ ] No secrets, unrelated rewrites, or unapproved
-    deployments/commits occurred.
-
-**Default instruction: inspect first, explain the plan, make the
-smallest safe change, test it, report what happened, and only then
-proceed to the next stage.**
+# VETterment — Project Guide
+
+## 1. Project Overview
+
+**VETterment** is a BSIT capstone project titled:
+
+**"VETterment: Mobile-Based Veterinary Management System With 3D Pet Anatomy Visualization for PetHub Veterinary Clinic."**
+
+It is an Android application designed to help PetHub Veterinary Clinic manage pet information, appointments, medical records, prescriptions, treatment progress, and administrative activities. It also aims to provide simplified 3D visualizations to help pet owners understand their pets' medical conditions.
+
+This is a standalone mobile application. It does not replace or integrate with PetHub's existing desktop record system.
+
+The priority is to build a functional, presentable application for the capstone demonstration. Prefer simple and practical solutions over unnecessary complexity.
+
+## 2. Technology Stack
+
+- **Language:** Kotlin
+- **UI:** Jetpack Compose and Material 3
+- **IDE:** Android Studio
+- **Backend:** Supabase
+- **Database:** PostgreSQL
+- **Authentication and Storage:** Supabase Auth and Storage
+- **Payments:** PayPal Sandbox
+- **3D Generation:** AI-based 3D generation API (Tripo AI, subject to the existing implementation)
+
+Continue using the existing stack. Do not introduce additional frameworks or dependencies unless they are genuinely necessary.
+
+## 3. Main System Modules
+
+VETterment consists of the following major modules:
+
+1. Account Registration, Management, Login, and Role-Based Access
+2. Appointment Scheduling
+3. Pet Management, Medical Records, Prescription, and Treatment Progress
+4. 3D Patient Visualization
+5. Administrative Management and Reporting
+
+The system has five intended user roles:
+
+- Admin
+- Head Veterinarian
+- Veterinarian
+- Clinical Staff
+- Pet Owner
+
+Inspect the existing role implementation and permissions before changing them. Do not assume that role names or responsibilities should be redesigned without a clear reason.
+
+## 4. Important System Requirements
+
+### Pet Management
+
+- The system supports cats and dogs only.
+- Pet owners can register and edit their own basic pet information.
+- Clinic-managed medical information, such as recorded allergies and pre-existing conditions, must remain protected from pet-owner edits.
+- Pet registration avatars should only offer cat and dog options.
+- Actual pet photos should use image storage and URLs, not emoji values stored as photo URLs.
+
+### Appointments and Treatment Progress
+
+There are exactly **three appointment options** available to pet owners:
+
+- Consultation
+- Confinement
+- Surgery
+
+Keep appointment status separate from treatment progress.
+
+**Consultation**
+- Does not have a treatment timeline or status updates.
+- The veterinarian records the check-up summary in the pet's Medical Records.
+
+**Confinement**
+
+The treatment progression has exactly three stages:
+
+1. Confined
+2. Recovery
+3. Discharge (Ready for Pick-up)
+
+**Surgery**
+
+The treatment progression has exactly three stages:
+
+1. Surgery
+2. Recovery
+3. Discharge (Ready for Pick-up)
+
+Treatment progress begins only when the pet is physically brought to and accepted by the clinic. Booking or confirming an appointment must not automatically start treatment or create an active treatment case.
+
+PetHub operates on a first-come-first-served, walk-in basis and accepts emergencies. Do not introduce guaranteed appointment slots, queue priority, or assumptions that conflict with this workflow.
+
+**Follow-up Checkups**
+- Follow-up checkups are not a fourth appointment option.
+- Veterinarians initiate them from an existing pet profile.
+- They should be associated with the pet's medical history and should not create a confinement or surgery timeline.
+
+### Payments
+
+- Use PayPal Sandbox for testing.
+- The initial doctor's fee is ₱400 for Consultation and ₱700 for Confinement or Surgery.
+- These fees are not the final clinic bill or a downpayment.
+- Additional charges based on the veterinarian's findings are handled at the clinic.
+- Payment must be verified through the backend. Never simulate successful payments or expose PayPal secrets in the Android application.
+
+### 3D Patient Visualization
+
+- The system focuses on the supported cat and dog breeds and medical conditions established for the project.
+- The visualization is intended to help explain a veterinarian's findings.
+- It is a simplified representation, not an exact anatomical replica, diagnostic tool, or treatment recommendation.
+- The visualization should reflect the veterinarian's recorded findings rather than independently determine a diagnosis.
+
+## 5. Existing Code Structure and Conventions
+
+Preserve the existing project structure and coding style.
+
+In particular, screen files generally follow three main sections:
+
+1. **Logic** — screen state, data retrieval, and business logic.
+2. **UI Layer** — Compose layouts and reusable UI components.
+3. **Functions** — supporting functions placed at the bottom of the file.
+
+Follow this organization when modifying existing screens.
+
+Use the existing components, naming conventions, navigation patterns, and Supabase data functions where practical. Avoid unnecessary rewrites or architectural migrations.
+
+Inspect related files before changing shared functions or database interactions.
+
+## 6. Development Guidelines
+
+- Understand the existing implementation before modifying it.
+- Make focused changes that solve the requested task.
+- Preserve working features and avoid unrelated modifications.
+- Do not duplicate existing functionality when it can be extended.
+- Keep code readable and consistent with the project.
+- Check for affected screens, navigation, database operations, and role permissions when making changes.
+- Report important incomplete functionality or errors instead of hiding them.
+- Test changes where possible and clearly state anything that could not be tested.
+
+Do not modify live Supabase configuration, deploy Edge Functions, run migrations, or change database policies without explicit approval.
+
+Never commit secrets, service-role keys, PayPal credentials, or other private configuration values.
+
+## 7. How to Work on This Project
+
+When starting a new task, first inspect the relevant implementation and understand how it connects to the rest of the application.
+
+For larger tasks, explain the proposed approach before making changes. Ask for clarification only when a decision genuinely affects system behavior and cannot reasonably be determined from the existing requirements or implementation.
+
+Work incrementally, prioritizing essential functionality and a working application over unnecessary refinements.
+
+Do not assume that every issue discovered during a review needs immediate fixing. Distinguish between:
+- Required changes
+- Existing incomplete features
+- Potential improvements
+
+Wait for approval before making changes outside the requested scope.
+
+**Overall goal:** Help complete VETterment as a functional, consistent, and demonstrable capstone application while preserving its established requirements and existing implementation.

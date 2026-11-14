@@ -19,6 +19,7 @@ import androidx.navigation.NavController
 import com.jcm.vetterment.features.data_models.Appointment
 import com.jcm.vetterment.features.data_models.Case
 import com.jcm.vetterment.features.data_models.Profile
+import com.jcm.vetterment.features.data_models.Roles
 import com.jcm.vetterment.features.staff.cases.CaseStages
 import com.jcm.vetterment.navigation.AppointmentRoutes
 import com.jcm.vetterment.navigation.BranchManagerRoutes
@@ -60,7 +61,7 @@ fun BranchManagerDashboardScreen(navController: NavController) {
             }
 
             totalStaff = GetProfileData.getAllStaff().count {
-                it.role in listOf("vet", "assistant_vet", "nurse")
+                it.role in listOf(Roles.VET, Roles.CLINICAL_STAFF)
             }
 
         } catch (e: Exception) {
@@ -137,7 +138,7 @@ fun BranchManagerDashboardContent(
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Text(
-                    text = "Branch Manager",
+                    text = Roles.displayName(it.role),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

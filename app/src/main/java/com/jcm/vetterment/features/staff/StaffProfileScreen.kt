@@ -9,6 +9,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.jcm.vetterment.features.data_models.Profile
+import com.jcm.vetterment.features.data_models.Roles
 import com.jcm.vetterment.supabase.GetProfileData
 import com.jcm.vetterment.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -180,10 +181,7 @@ private fun ProfileBody(
             ProfileRow(label = "Email", value = profile.email)
             ProfileRow(
                 label = "Role",
-                value = profile.role
-                    .replace("_", " ")
-                    .lowercase()
-                    .replaceFirstChar { it.uppercase() }
+                value = Roles.displayName(profile.role)
             )
         }
 

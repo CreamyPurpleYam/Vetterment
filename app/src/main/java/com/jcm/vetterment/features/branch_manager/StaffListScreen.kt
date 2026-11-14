@@ -20,6 +20,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.jcm.vetterment.features.auth.formatName
 import com.jcm.vetterment.features.data_models.Profile
+import com.jcm.vetterment.features.data_models.Roles
 import com.jcm.vetterment.navigation.BranchManagerRoutes
 import com.jcm.vetterment.supabase.GetProfileData
 import kotlinx.coroutines.launch
@@ -197,16 +198,11 @@ fun StaffListContent(
     onEditConfirm: () -> Unit,
     onDeleteConfirm: () -> Unit
 ) {
-    val vets         = staff.filter { it.role == "vet" }
-    val assistants   = staff.filter { it.role == "assistant_vet" }
-    val nurses       = staff.filter { it.role == "nurse" }
-    val managers     = staff.filter { it.role == "branch_manager" }
+    val vets         = staff.filter { it.role == Roles.VET }
+    val clinical     = staff.filter { it.role == Roles.CLINICAL_STAFF }
+    val headVets     = staff.filter { it.role == Roles.HEAD_VET }
 
-    val roles = listOf(
-        "vet" to "Veterinarian",
-        "assistant_vet" to "Assistant Veterinarian",
-        "nurse" to "Nurse"
-    )
+    val roles = Roles.EDITABLE_STAFF_ROLES.map { it to Roles.displayName(it) }
 
     BranchManagerScaffold(
         navController = navController,
@@ -250,9 +246,9 @@ fun StaffListContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
-                if (managers.isNotEmpty()) {
-                    item { StaffSectionHeader("Branch Manager", managers.size) }
-                    items(managers) { profile ->
+                if (headVets.isNotEmpty()) {
+                    item { StaffSectionHeader("Head Veterinarians", headVets.size) }
+                    items(headVets) { profile ->
                         StaffCard(
                             profile = profile,
                             onEditClick = { onEditClick(profile) },
@@ -274,21 +270,9 @@ fun StaffListContent(
                     }
                     item { Spacer(Modifier.height(8.dp)) }
                 }
-                if (assistants.isNotEmpty()) {
-                    item { StaffSectionHeader("Assistant Veterinarians", assistants.size) }
-                    items(assistants) { profile ->
-                        StaffCard(
-                            profile = profile,
-                            onEditClick = { onEditClick(profile) },
-                            onDeleteClick = { onDeleteClick(profile) },
-                            isDeletable = profile.id != currentUserId
-                        )
-                    }
-                    item { Spacer(Modifier.height(8.dp)) }
-                }
-                if (nurses.isNotEmpty()) {
-                    item { StaffSectionHeader("Nurses", nurses.size) }
-                    items(nurses) { profile ->
+                if (clinical.isNotEmpty()) {
+                    item { StaffSectionHeader("Clinical Staff", clinical.size) }
+                    items(clinical) { profile ->
                         StaffCard(
                             profile = profile,
                             onEditClick = { onEditClick(profile) },
@@ -478,10 +462,7 @@ fun StaffCard(
                 color = MaterialTheme.colorScheme.secondaryContainer
             ) {
                 Text(
-                    text = profile.role
-                        .replace("_", " ")
-                        .lowercase()
-                        .replaceFirstChar { it.uppercase() },
+                    text = Roles.displayName(profile.role),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)

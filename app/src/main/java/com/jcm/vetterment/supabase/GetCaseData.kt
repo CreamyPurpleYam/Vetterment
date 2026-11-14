@@ -8,7 +8,7 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
 
 object GetCaseData {
-    // ─── Create ─────────────────────────────────────────────────────────────    // ─── Read ────────────────────────────────────────────────────────────────
+    // ─── Create ─────────────────────────────────────────────────────────────
 
     suspend fun createCase(
         petId: String,
@@ -18,11 +18,7 @@ object GetCaseData {
         if (petId.isBlank()) return null
 
         val normalizedType = caseType.trim().uppercase()
-        if (normalizedType !in listOf(
-                "CONSULTATION", "VACCINATION", "SURGERY",
-                "CONFINEMENT", "TREATMENT", "GROOMING", "EMERGENCY"
-            )
-        ) return null
+        if (normalizedType !in CaseStages.CREATABLE_CASE_TYPES) return null
 
         val currentUser =
             SupabaseClient.client.auth.currentUserOrNull() ?: return null
@@ -53,52 +49,6 @@ object GetCaseData {
 
             created
 
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    // ─── Read ─────────────────────────────────────────────────────────────    // ─── Read ────────────────────────────────────────────────────────────────
-    suspend fun createFollowUpCase(
-        previousCase: Case
-    ): Case? {
-        if (previousCase.id == null) return null
-        if (previousCase.current_status !in listOf("COMPLETED", "DISCHARGED")) return null
-
-        // Follow-ups are always consultations regardless of the original case type
-        val caseType = "CONSULTATION"
-        val currentUser =
-            SupabaseClient.client.auth.currentUserOrNull() ?: return null
-
-        val initialStatus = CaseStages.stagesFor(caseType).first()
-
-        // root_case_id: use the predecessor's root if it has one, else the predecessor itself
-        val rootCaseId = previousCase.root_case_id ?: previousCase.id
-
-        val newCase = Case(
-            pet_id = previousCase.pet_id,
-            case_type = caseType,
-            current_status = initialStatus,
-            previous_case_id = previousCase.id,
-            root_case_id = rootCaseId,
-            created_by = currentUser.id
-        )
-
-        return try {
-            val created = SupabaseClient.client
-                .from("cases")
-                .insert(newCase) { select() }
-                .decodeSingle<Case>()
-
-            insertProgress(
-                caseId = created.id ?: return null,
-                status = initialStatus,
-                notes = "Follow-up case opened.",
-                recordedBy = currentUser.id
-            )
-
-            created
         } catch (e: Exception) {
             e.printStackTrace()
             null
@@ -177,14 +127,14 @@ object GetCaseData {
         }
     }
 
-    // ─── Update ─────────────────────────────────────────────────────────────    // ─── Read ────────────────────────────────────────────────────────────────
+    // ─── Update ──────────────────────────────────────────────────────────────
 
     suspend fun advanceCaseStatus(
         caseId: String,
         notes: String = ""
     ): Case? {
         val currentCase = getCaseById(caseId) ?: return null
-        val stages = CaseStages.stagesFor(currentCase.case_type)
+        val stages = CaseStages.stagesFor(currentCase.case_type, currentCase.current_status)
         val currentIndex = stages.indexOf(currentCase.current_status)
 
         if (currentCase.assigned_vet_id == null) { return null }
@@ -208,6 +158,17 @@ object GetCaseData {
                 notes = notes.trim().takeIf { it.isNotBlank() },
                 recordedBy = currentUser.id
             )
+
+            // Discharge completes the linked appointment (treatment finished)
+            if (nextStatus == "DISCHARGED") {
+                currentCase.appointment_id?.let { appointmentId ->
+                    try {
+                        GetAppointmentData.completeAppointment(appointmentId)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
 
             getCaseById(caseId)
 
@@ -282,7 +243,7 @@ object GetCaseData {
         }
     }
 
-    // ─── Private helpers ────────────────────────────────────────────────────    // ─── Read ────────────────────────────────────────────────────────────────
+    // ─── Private helpers ─────────────────────────────────────────────────────
 
     private suspend fun insertProgress(
         caseId: String,

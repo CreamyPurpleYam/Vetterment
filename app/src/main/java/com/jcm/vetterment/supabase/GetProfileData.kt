@@ -1,6 +1,7 @@
 package com.jcm.vetterment.supabase
 
 import com.jcm.vetterment.features.data_models.Profile
+import com.jcm.vetterment.features.data_models.Roles
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
@@ -74,7 +75,7 @@ object GetProfileData {
         }
     }
 
-    // ─── Staff management (branch manager only) ───────────────────────────────
+    // ─── Staff management (head veterinarian only) ───────────────────────────
 
     suspend fun getAllStaff(): List<Profile> {
         return try {
@@ -84,7 +85,7 @@ object GetProfileData {
                     filter {
                         isIn(
                             "role",
-                            listOf("vet", "nurse", "assistant_vet", "branch_manager")
+                            Roles.STAFF_ROLES + Roles.LEGACY_STAFF_ROLES
                         )
                     }
                 }
@@ -107,7 +108,7 @@ object GetProfileData {
         role: String
     ): String? {
         val normalizedRole = role.trim().lowercase()
-        if (normalizedRole !in listOf("vet", "nurse", "assistant_vet")) return null
+        if (normalizedRole !in Roles.CREATABLE_STAFF_ROLES) return null
 
         val normalizedEmail = email.trim().lowercase()
         val normalizedName = fullName.trim()
@@ -152,7 +153,7 @@ object GetProfileData {
         fullName?.let { updates["full_name"] = it.trim().takeIf { it.isNotBlank() } }
         role?.let {
             val normalizedRole = it.trim().lowercase()
-            if (normalizedRole in listOf("vet", "nurse", "assistant_vet", "branch_manager")) {
+            if (normalizedRole in Roles.EDITABLE_STAFF_ROLES) {
                 updates["role"] = normalizedRole
             }
         }

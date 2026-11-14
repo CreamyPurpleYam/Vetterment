@@ -45,6 +45,7 @@ fun BranchManagerProfileScreen(navController: NavController) {
     }
 
     val onLogoutClick = { showLogoutDialog = true }
+    val onDismissLogout = { showLogoutDialog = false }
     val onLogoutConfirm: () -> Unit = {
         showLogoutDialog = false
         scope.launch {
@@ -68,7 +69,8 @@ fun BranchManagerProfileScreen(navController: NavController) {
         errorMessage = errorMessage,
         showLogoutDialog = showLogoutDialog,
         onLogoutClick = onLogoutClick,
-        onLogoutConfirm = onLogoutConfirm
+        onLogoutConfirm = onLogoutConfirm,
+        onDismissLogout = onDismissLogout
     )
 }
 
@@ -80,7 +82,8 @@ fun BranchManagerProfileContent(
     errorMessage: String,
     showLogoutDialog: Boolean,
     onLogoutClick: () -> Unit,
-    onLogoutConfirm: () -> Unit
+    onLogoutConfirm: () -> Unit,
+    onDismissLogout: () -> Unit = {}
 ) {
     BranchManagerScaffold(navController = navController) { innerPadding ->
         Column(
@@ -179,16 +182,6 @@ fun BranchManagerProfileContent(
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     MenuItem(
-                        icon = Icons.Default.Person,
-                        label = "Edit Profile",
-                        onClick = { /* TODO: Navigate to edit profile */ }
-                    )
-                    MenuItem(
-                        icon = Icons.Default.Settings,
-                        label = "Settings",
-                        onClick = { /* TODO: Navigate to settings */ }
-                    )
-                    MenuItem(
                         icon = Icons.Default.Logout,
                         label = "Log Out",
                         onClick = onLogoutClick,
@@ -202,7 +195,7 @@ fun BranchManagerProfileContent(
     // Logout dialog
     if (showLogoutDialog) {
         AlertDialog(
-            onDismissRequest = { /* handled by parent */ },
+            onDismissRequest = onDismissLogout,
             title = { Text("Log Out") },
             text = { Text("Are you sure you want to log out?") },
             confirmButton = {
@@ -211,7 +204,7 @@ fun BranchManagerProfileContent(
                 }
             },
             dismissButton = {
-                TextButton(onClick = onLogoutClick) { Text("Cancel") }
+                TextButton(onClick = onDismissLogout) { Text("Cancel") }
             }
         )
     }

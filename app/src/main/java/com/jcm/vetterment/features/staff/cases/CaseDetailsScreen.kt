@@ -21,6 +21,7 @@ import com.jcm.vetterment.features.data_models.CaseProgress
 import com.jcm.vetterment.features.data_models.Medication
 import com.jcm.vetterment.features.data_models.Pet
 import com.jcm.vetterment.features.data_models.Profile
+import com.jcm.vetterment.features.data_models.Roles
 import com.jcm.vetterment.navigation.CaseRoutes
 import com.jcm.vetterment.supabase.GetCaseData
 import com.jcm.vetterment.supabase.GetMedicationData
@@ -44,11 +45,9 @@ fun CaseDetailsScreen(
     var isClaiming by remember { mutableStateOf(false) }
     var showAdvanceDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
-    var showFollowUpDialog by remember { mutableStateOf(false) }
     var advanceNotes by remember { mutableStateOf("") }
     var currentProfile by remember { mutableStateOf<Profile?>(null) }
     var assignedVet by remember { mutableStateOf<Profile?>(null) }
-    var isCreatingFollowUp by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     var medications by remember { mutableStateOf<List<Medication>>(emptyList()) }
     var showAddMedicationDialog by remember { mutableStateOf(false) }
@@ -123,24 +122,8 @@ fun CaseDetailsScreen(
         }
     }
 
-    // Create follow-up
-    LaunchedEffect(isCreatingFollowUp) {
-        if (!isCreatingFollowUp) return@LaunchedEffect
-        try {
-            val currentCase = case ?: return@LaunchedEffect
-            val followUp = GetCaseData.createFollowUpCase(currentCase)
-            if (followUp?.id != null) {
-                navController.navigate(CaseRoutes.caseDetails(followUp.id))
-            } else {
-                errorMessage = "Failed to create follow-up case."
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            errorMessage = "Failed to create follow-up case."
-        } finally {
-            isCreatingFollowUp = false
-        }
-    }
+    // Create follow-up — follow-ups are now scheduled as consultation
+    // appointments from the pet profile (PetDetailsScreen), not case chains.
 
     CaseDetailsContent(
         case = case,
@@ -152,12 +135,11 @@ fun CaseDetailsScreen(
         isLoading = isLoading,
         errorMessage = errorMessage,
         isClaiming = isClaiming,
-        isCreatingFollowUp = isCreatingFollowUp,
         onBackClick = { navController.popBackStack() },
         onAdvanceClick = { showAdvanceDialog = true },
         onClaimClick = { isClaiming = true },
         onEditClick = { showEditDialog = true },
-        onFollowUpClick = { showFollowUpDialog = true },medications = medications,
+        medications = medications,
         onAddMedicationClick = { showAddMedicationDialog = true },
     )
 
@@ -213,24 +195,6 @@ fun CaseDetailsScreen(
         )
     }
 
-    if (showFollowUpDialog) {
-        AlertDialog(
-            onDismissRequest = { showFollowUpDialog = false },
-            title = { Text("Create Follow-up Case") },
-            text = {
-                Text("This will create a new Consultation case linked to this one. The current case will remain completed.")
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showFollowUpDialog = false
-                    isCreatingFollowUp = true
-                }) { Text("Create") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showFollowUpDialog = false }) { Text("Cancel") }
-            }
-        )
-    }
     if (showAddMedicationDialog) {
         AddMedicationDialog(
             caseId = caseId,
@@ -259,12 +223,10 @@ fun CaseDetailsContent(
     isLoading: Boolean,
     errorMessage: String,
     isClaiming: Boolean,
-    isCreatingFollowUp: Boolean,
     onBackClick: () -> Unit,
     onAdvanceClick: () -> Unit,
     onClaimClick: () -> Unit,
     onEditClick: () -> Unit,
-    onFollowUpClick: () -> Unit,
     medications: List<Medication>,
     onAddMedicationClick: () -> Unit,
 ) {
@@ -333,10 +295,8 @@ fun CaseDetailsContent(
                         currentProfile = currentProfile,
                         progress = progress,
                         isClaiming = isClaiming,
-                        isCreatingFollowUp = isCreatingFollowUp,
                         onAdvanceClick = onAdvanceClick,
                         onClaimClick = onClaimClick,
-                        onFollowUpClick = onFollowUpClick,
                         medications = medications,
                         onAddMedicationClick = onAddMedicationClick,
                     )
@@ -357,10 +317,8 @@ private fun CaseDetailsBody(
     currentProfile: Profile?,
     progress: List<CaseProgress>,
     isClaiming: Boolean,
-    isCreatingFollowUp: Boolean,
     onAdvanceClick: () -> Unit,
     onClaimClick: () -> Unit,
-    onFollowUpClick: () -> Unit,
     medications: List<Medication>,
     onAddMedicationClick: () -> Unit,
 ) {
@@ -369,7 +327,7 @@ private fun CaseDetailsBody(
     val isCompleted = case.current_status in listOf("COMPLETED", "DISCHARGED")
     val isClaimed = case.assigned_vet_id != null
     val canClaim =
-        (currentProfile?.role == "vet" || currentProfile?.role == "branch_manager") &&
+        Roles.isVetLevel(currentProfile?.role) &&
                 case.assigned_vet_id == null &&
                 !isClaiming &&
                 !isCompleted
@@ -484,25 +442,6 @@ private fun CaseDetailsBody(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-
-            // ── Follow-up button — only when completed ─────────────────
-            Button(
-                onClick = onFollowUpClick,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isCreatingFollowUp
-            ) {
-                if (isCreatingFollowUp) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Creating…")
-                } else {
-                    Text("Create Follow-up Case")
-                }
             }
         }
 

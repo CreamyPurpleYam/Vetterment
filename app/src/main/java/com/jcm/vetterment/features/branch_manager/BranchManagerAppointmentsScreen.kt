@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.jcm.vetterment.features.data_models.Appointment
 import com.jcm.vetterment.features.data_models.Profile
-import com.jcm.vetterment.navigation.CaseRoutes
+import com.jcm.vetterment.navigation.AppointmentRoutes
 import com.jcm.vetterment.supabase.GetAppointmentData
 import com.jcm.vetterment.supabase.GetProfileData
 import kotlinx.coroutines.launch
@@ -43,7 +43,7 @@ fun BranchManagerAppointmentsScreen(navController: NavController) {
         appointments = appointments,
         isLoading = isLoading,
         errorMessage = errorMessage,
-        onAppointmentClick = { it.id?.let { id -> navController.navigate(CaseRoutes.caseDetails(id)) } },
+        onAppointmentClick = { it.id?.let { id -> navController.navigate(AppointmentRoutes.appointmentDetail(id)) } },
         onRefresh = { /* refresh handled by LaunchedEffect */ }
     )
 }

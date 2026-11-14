@@ -38,6 +38,7 @@ import com.jcm.vetterment.features.pet_owner.PetOwnerMedicationsScreen
 import com.jcm.vetterment.features.pet_owner.PetOwnerPetDetailScreen
 import com.jcm.vetterment.features.pet_owner.PaymentProcessingScreen
 import com.jcm.vetterment.features.pet_owner.PetOwnerProfileScreen
+import com.jcm.vetterment.features.data_models.Roles
 import com.jcm.vetterment.features.staff.StaffDashboardScreen
 import com.jcm.vetterment.features.staff.StaffProfileScreen
 import com.jcm.vetterment.features.staff.appointments.AppointmentDetailScreen
@@ -84,10 +85,10 @@ fun AppRoot() {
         val currentUser = SupabaseClient.client.auth.currentUserOrNull()
         if (currentUser != null) {
             val role = GetProfileData.getCurrentRole()
-            initialDestination.value = when(role) {
-                "pet_owner" -> "pet_owner"
-                "vet", "assistant_vet", "nurse" -> StaffRoutes.Dashboard
-                "branch_manager" -> "branch_manager"
+            initialDestination.value = when {
+                role == Roles.PET_OWNER -> "pet_owner"
+                Roles.isStaff(role) -> StaffRoutes.Dashboard
+                Roles.isStaffManager(role) || role == Roles.HEAD_VET -> BranchManagerRoutes.Dashboard
                 else -> "login"
             }
         }
@@ -164,9 +165,6 @@ fun AppRoot() {
             }
 
             // ── Branch Manager ────────────────────────────────────────────────────
-            composable("branch_manager") {
-                BranchManagerDashboardScreen(navController)
-            }
             composable(BranchManagerRoutes.Dashboard) {
                 BranchManagerDashboardScreen(navController)
             }
