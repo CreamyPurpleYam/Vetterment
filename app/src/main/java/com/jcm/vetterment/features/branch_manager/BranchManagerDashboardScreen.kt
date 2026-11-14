@@ -22,7 +22,7 @@ import com.jcm.vetterment.features.data_models.Profile
 import com.jcm.vetterment.features.data_models.Roles
 import com.jcm.vetterment.features.staff.cases.CaseStages
 import com.jcm.vetterment.navigation.AppointmentRoutes
-import com.jcm.vetterment.navigation.BranchManagerRoutes
+import com.jcm.vetterment.navigation.HeadVetRoutes
 import com.jcm.vetterment.navigation.CaseRoutes
 import com.jcm.vetterment.navigation.StaffRoutes
 import com.jcm.vetterment.supabase.GetAppointmentData
@@ -85,8 +85,8 @@ fun BranchManagerDashboardScreen(navController: NavController) {
         errorMessage = errorMessage,
         onViewCasesClick = { navController.navigate(CaseRoutes.Cases) },
         onViewAppointmentsClick = { navController.navigate(AppointmentRoutes.Appointments) },
-        onViewStaffClick = { navController.navigate(BranchManagerRoutes.StaffList) },
-        onCreateStaffClick = { navController.navigate(BranchManagerRoutes.CreateStaffAccount) },
+        onViewStaffClick = { navController.navigate(HeadVetRoutes.StaffList) },
+        onCreateStaffClick = { navController.navigate(HeadVetRoutes.CreateStaffAccount) },
         onCaseClick = { it.id?.let { id -> navController.navigate(CaseRoutes.caseDetails(id)) } },
         onViewPatientsClick = { navController.navigate(StaffRoutes.Patients) }
     )

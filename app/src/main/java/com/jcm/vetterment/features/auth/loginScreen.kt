@@ -40,7 +40,7 @@ import com.jcm.vetterment.features.components.VettermentOutlinedTextField
 import com.jcm.vetterment.features.components.VettermentSecondary
 import com.jcm.vetterment.features.components.VettermentTitle
 import com.jcm.vetterment.features.data_models.Roles
-import com.jcm.vetterment.navigation.BranchManagerRoutes
+import com.jcm.vetterment.navigation.HeadVetRoutes
 import com.jcm.vetterment.navigation.StaffRoutes
 import com.jcm.vetterment.supabase.GetProfileData
 import com.jcm.vetterment.supabase.SupabaseClient
@@ -95,7 +95,7 @@ fun LoginScreen(navController: NavController)
                                 }
 
                                 role == Roles.HEAD_VET || role == "branch_manager" || role == Roles.ADMIN -> {
-                                    navController.navigate(BranchManagerRoutes.Dashboard) {
+                                    navController.navigate(HeadVetRoutes.Dashboard) {
                                         popUpTo("login") {
                                             inclusive = true
                                         }

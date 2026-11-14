@@ -18,7 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.jcm.vetterment.navigation.BranchManagerRoutes
+import com.jcm.vetterment.navigation.HeadVetRoutes
 
 private data class BranchManagerNavItem(
     val label: String,
@@ -30,31 +30,31 @@ private data class BranchManagerNavItem(
 private val branchManagerNavItems = listOf(
     BranchManagerNavItem(
         label = "Dashboard",
-        route = BranchManagerRoutes.Dashboard,
+        route = HeadVetRoutes.Dashboard,
         selectedIcon = Icons.Filled.Home,
         unselectedIcon = Icons.Outlined.Home
     ),
     BranchManagerNavItem(
         label = "Patients",
-        route = BranchManagerRoutes.Patients,
+        route = HeadVetRoutes.Patients,
         selectedIcon = Icons.Filled.MedicalServices,
         unselectedIcon = Icons.Outlined.MedicalServices
     ),
     BranchManagerNavItem(
         label = "Appointments",
-        route = BranchManagerRoutes.Appointments,
+        route = HeadVetRoutes.Appointments,
         selectedIcon = Icons.Filled.CalendarMonth,
         unselectedIcon = Icons.Outlined.CalendarMonth
     ),
     BranchManagerNavItem(
         label = "Staff",
-        route = BranchManagerRoutes.StaffList,
+        route = HeadVetRoutes.StaffList,
         selectedIcon = Icons.Filled.Group,
         unselectedIcon = Icons.Outlined.Group
     ),
     BranchManagerNavItem(
         label = "Profile",
-        route = BranchManagerRoutes.Profile,
+        route = HeadVetRoutes.Profile,
         selectedIcon = Icons.Filled.AccountCircle,
         unselectedIcon = Icons.Outlined.AccountCircle
     )
@@ -79,7 +79,7 @@ fun BranchManagerScaffold(
                         onClick = {
                             if (!selected) {
                                 navController.navigate(item.route) {
-                                    popUpTo(BranchManagerRoutes.Dashboard) {
+                                    popUpTo(HeadVetRoutes.Dashboard) {
                                         saveState = true
                                     }
                                     launchSingleTop = true

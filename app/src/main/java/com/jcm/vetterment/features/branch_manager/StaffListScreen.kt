@@ -21,7 +21,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.jcm.vetterment.features.auth.formatName
 import com.jcm.vetterment.features.data_models.Profile
 import com.jcm.vetterment.features.data_models.Roles
-import com.jcm.vetterment.navigation.BranchManagerRoutes
+import com.jcm.vetterment.navigation.HeadVetRoutes
 import com.jcm.vetterment.supabase.GetProfileData
 import kotlinx.coroutines.launch
 
@@ -79,8 +79,8 @@ fun StaffListScreen(navController: NavController) {
 
     LaunchedEffect(currentRoute) {
         // If we're on staff list and came from create staff screen, refresh
-        if (currentRoute == BranchManagerRoutes.StaffList &&
-            lastRoute == BranchManagerRoutes.CreateStaffAccount) {
+        if (currentRoute == HeadVetRoutes.StaffList &&
+            lastRoute == HeadVetRoutes.CreateStaffAccount) {
             refreshStaff()
         }
         lastRoute = currentRoute
@@ -137,7 +137,7 @@ fun StaffListScreen(navController: NavController) {
         errorMessage = errorMessage,
         currentUserId = currentUserId,
         onCreateClick = {
-            navController.navigate(BranchManagerRoutes.CreateStaffAccount)
+            navController.navigate(HeadVetRoutes.CreateStaffAccount)
         },
         onEditClick = { profile ->
             editingProfile = profile

@@ -1,4 +1,4 @@
-package com.jcm.vetterment.features.pet_owner
+﻿package com.jcm.vetterment.features.pet_owner
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -93,6 +93,7 @@ fun PetOwner_Dashboard(navController: NavController) {
         errorMessage = errorMessage,
         pets = pets,
         upcomingAppointments = upcomingAppointments,
+        activeCases = activeCases,
         medications = medications
     )
 }
@@ -107,6 +108,7 @@ fun PetOwnerDashboardContent(
     errorMessage: String,
     pets: List<Pet>,
     upcomingAppointments: List<Appointment>,
+    activeCases: List<Pair<Case, Pet?>>,
     medications: List<Pair<Medication, Pet?>>
 ) {
     PetOwnerScaffold(navController = navController) { innerPadding ->
@@ -160,6 +162,55 @@ fun PetOwnerDashboardContent(
                         }
                     }
 
+                    // Active Treatment Progress Banner (Confinement / Surgery)
+                    val ongoingTreatments = activeCases.filter { (c, _) ->
+                        c.case_type in listOf("CONFINEMENT", "SURGERY") && c.current_status !in listOf("COMPLETED", "DISCHARGED")
+                    }
+                    if (ongoingTreatments.isNotEmpty()) {
+                        ongoingTreatments.forEach { (c, pet) ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth().clickable {
+                                    c.id?.let { id -> navController.navigate(PetOwnerRoutes.caseDetail(id)) }
+                                },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(44.dp),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.primary
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(if (c.case_type == "SURGERY") "\uD83E\uDE7A" else "\uD83C\uDFE5", style = MaterialTheme.typography.titleMedium)
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Treatment in Progress: ${pet?.name ?: "Your Pet"}",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                        Text(
+                                            text = "${c.case_type.lowercase().replaceFirstChar { it.uppercase() }} • Stage: ${c.current_status.lowercase().replace('_', ' ').replaceFirstChar { it.uppercase() }}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                        )
+                                        Text(
+                                            text = "Tap to view live treatment timeline →",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                     // My Pets section (Priority A)
                     DashboardSection(title = "My Pets") {
                         if (pets.isEmpty()) {

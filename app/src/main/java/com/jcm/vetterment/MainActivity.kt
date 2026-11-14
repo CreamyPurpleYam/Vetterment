@@ -52,7 +52,7 @@ import com.jcm.vetterment.features.staff.patients.PetDetailsScreen
 import com.jcm.vetterment.features.staff.patients.RegisterPetScreen
 import com.jcm.vetterment.features.staff.patients.SearchOwnerScreen
 import com.jcm.vetterment.navigation.PetOwnerRoutes
-import com.jcm.vetterment.navigation.BranchManagerRoutes
+import com.jcm.vetterment.navigation.HeadVetRoutes
 import com.jcm.vetterment.navigation.StaffRoutes
 import com.jcm.vetterment.navigation.CaseRoutes
 import com.jcm.vetterment.navigation.AppointmentRoutes
@@ -87,7 +87,7 @@ fun AppRoot() {
             val role = GetProfileData.getCurrentRole()
             initialDestination.value = when {
                 role == Roles.PET_OWNER -> "pet_owner"
-                role == Roles.HEAD_VET || role == "branch_manager" || role == Roles.ADMIN -> BranchManagerRoutes.Dashboard
+                role == Roles.HEAD_VET || role == "branch_manager" || role == Roles.ADMIN -> HeadVetRoutes.Dashboard
                 Roles.isStaff(role) -> StaffRoutes.Dashboard
                 else -> "login"
             }
@@ -165,22 +165,22 @@ fun AppRoot() {
             }
 
             // ── Branch Manager ────────────────────────────────────────────────────
-            composable(BranchManagerRoutes.Dashboard) {
+            composable(HeadVetRoutes.Dashboard) {
                 BranchManagerDashboardScreen(navController)
             }
-            composable(BranchManagerRoutes.StaffList) {
+            composable(HeadVetRoutes.StaffList) {
                 StaffListScreen(navController)
             }
-            composable(BranchManagerRoutes.CreateStaffAccount) {
+            composable(HeadVetRoutes.CreateStaffAccount) {
                 CreateStaffScreen(navController)
             }
-            composable(BranchManagerRoutes.Patients) {
+            composable(HeadVetRoutes.Patients) {
                 BranchManagerPatientsScreen(navController)
             }
-            composable(BranchManagerRoutes.Appointments) {
+            composable(HeadVetRoutes.Appointments) {
                 BranchManagerAppointmentsScreen(navController)
             }
-            composable(BranchManagerRoutes.Profile) {
+            composable(HeadVetRoutes.Profile) {
                 BranchManagerProfileScreen(navController)
             }
 
