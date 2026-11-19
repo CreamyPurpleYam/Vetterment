@@ -98,9 +98,6 @@ fun RegisterScreen( //Logic Layer
                 else -> {
                     scope.launch {
                         try {
-                            println("FULLNAME = [$formattedName]")
-                            println("EMAIL = [$email]")
-                            println("EMAIL LENGTH = ${email.length}")
                             SupabaseClient.client.auth.signUpWith(Email){
                                 this.email = cleanedEmail
                                 this.password = password
@@ -108,20 +105,43 @@ fun RegisterScreen( //Logic Layer
                             val user =
                                 SupabaseClient.client.auth.currentUserOrNull()
 
-                            if (user != null) {
-                                val profile = Profile(
-                                    id = user.id,
-                                    full_name = formattedName,
-                                    email = cleanedEmail,
-                                    role = "pet_owner"
-                                )
+                            if (user == null) {
+                                // Auth account exists but no session was created
+                                // (e.g. email confirmation required), so the
+                                // profile row could not be created. The account
+                                // would be a dead end — surface it instead of
+                                // pretending registration succeeded.
+                                errorMessage =
+                                    "Your account was created, but setup could not " +
+                                    "complete because you are not signed in. " +
+                                    "If email confirmation is required, confirm your " +
+                                    "email, then log in. If this keeps happening, " +
+                                    "please contact the clinic."
+                                return@launch
+                            }
 
+                            val profile = Profile(
+                                id = user.id,
+                                full_name = formattedName,
+                                email = cleanedEmail,
+                                role = "pet_owner"
+                            )
+
+                            try {
                                 SupabaseClient.client
                                     .from("profiles")
                                     .insert(profile)
+                            } catch (e: Exception) {
+                                // The auth user exists now, but has no profile
+                                // row — registering again is impossible, so the
+                                // message must say so instead of "try again".
+                                e.printStackTrace()
+                                errorMessage =
+                                    "Your account was created, but profile setup " +
+                                    "failed. Please contact the clinic — do not " +
+                                    "register again with this email."
+                                return@launch
                             }
-
-                            println("PROFILE CREATED")
 
                             navController.popBackStack()
                         } catch (e: Exception){

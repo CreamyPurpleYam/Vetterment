@@ -5,7 +5,11 @@
 -- 1. Head Veterinarian and Admin can manage and view all staff and records.
 -- 2. Staff (Head Vet, Vet, Clinical Staff) can view/manage patients, cases, appointments.
 -- 3. Pet Owners can only access their own profile, their pets, and their appointments.
--- 
+--
+-- NOTE: the live database stores owner_id columns as uuid, so every owner_id
+-- comparison casts both sides to text (owner_id::text = auth.uid()::text) —
+-- this works whether the column is uuid or text.
+--
 -- HOW TO RUN:
 -- Open Supabase Dashboard -> Project -> SQL Editor -> New Query -> Paste & Run.
 -- ==============================================================================
@@ -49,6 +53,8 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Staff can read all profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Head vet can insert/update staff profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Head vet can insert staff profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Head vet can update staff profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 
 -- Anyone authenticated can view their own profile
@@ -96,7 +102,7 @@ DROP POLICY IF EXISTS "Staff can update pets" ON public.pets;
 CREATE POLICY "Owners can view own pets"
 ON public.pets FOR SELECT
 TO authenticated
-USING (owner_id = (auth.uid())::text);
+USING (owner_id::text = auth.uid()::text);
 
 -- Staff can view all pets
 CREATE POLICY "Staff can view all pets"
@@ -108,7 +114,7 @@ USING (public.is_staff(auth.uid()));
 CREATE POLICY "Owners can create own pets"
 ON public.pets FOR INSERT
 TO authenticated
-WITH CHECK (owner_id = (auth.uid())::text);
+WITH CHECK (owner_id::text = auth.uid()::text);
 
 -- Staff can register walk-in pets for any owner
 CREATE POLICY "Staff can create pets"
@@ -120,7 +126,7 @@ WITH CHECK (public.is_staff(auth.uid()));
 CREATE POLICY "Owners can update own pets"
 ON public.pets FOR UPDATE
 TO authenticated
-USING (owner_id = (auth.uid())::text);
+USING (owner_id::text = auth.uid()::text);
 
 -- Staff can update pets (including clinical info like allergies, weight)
 CREATE POLICY "Staff can update pets"
@@ -137,12 +143,14 @@ DROP POLICY IF EXISTS "Owners can view own appointments" ON public.appointments;
 DROP POLICY IF EXISTS "Staff can view all appointments" ON public.appointments;
 DROP POLICY IF EXISTS "Owners can create own appointments" ON public.appointments;
 DROP POLICY IF EXISTS "Staff can manage appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Staff can insert appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Staff can update appointments" ON public.appointments;
 
 -- Owners view own appointments
 CREATE POLICY "Owners can view own appointments"
 ON public.appointments FOR SELECT
 TO authenticated
-USING (owner_id = (auth.uid())::text);
+USING (owner_id::text = auth.uid()::text);
 
 -- Staff view all appointments
 CREATE POLICY "Staff can view all appointments"
@@ -154,7 +162,7 @@ USING (public.is_staff(auth.uid()));
 CREATE POLICY "Owners can create own appointments"
 ON public.appointments FOR INSERT
 TO authenticated
-WITH CHECK (owner_id = (auth.uid())::text);
+WITH CHECK (owner_id::text = auth.uid()::text);
 
 -- Staff can insert, update (confirm, check-in, cancel) appointments
 CREATE POLICY "Staff can insert appointments"
@@ -175,6 +183,8 @@ ALTER TABLE public.case_progress ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Staff can view all cases" ON public.cases;
 DROP POLICY IF EXISTS "Staff can manage cases" ON public.cases;
+DROP POLICY IF EXISTS "Staff can insert cases" ON public.cases;
+DROP POLICY IF EXISTS "Staff can update cases" ON public.cases;
 DROP POLICY IF EXISTS "Owners can view cases of their pets" ON public.cases;
 
 -- Staff can view and manage all cases
@@ -201,7 +211,7 @@ USING (
   EXISTS (
     SELECT 1 FROM public.pets
     WHERE pets.id = cases.pet_id
-      AND pets.owner_id = (auth.uid())::text
+      AND pets.owner_id::text = auth.uid()::text
   )
 );
 
@@ -228,7 +238,7 @@ USING (
     SELECT 1 FROM public.cases
     JOIN public.pets ON pets.id = cases.pet_id
     WHERE cases.id = case_progress.case_id
-      AND pets.owner_id = (auth.uid())::text
+      AND pets.owner_id::text = auth.uid()::text
   )
 );
 
