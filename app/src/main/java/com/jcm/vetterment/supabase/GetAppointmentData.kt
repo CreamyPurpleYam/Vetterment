@@ -136,12 +136,18 @@ object GetAppointmentData {
             SupabaseClient.client.auth.currentUserOrNull() ?: return false
 
         return try {
-            SupabaseClient.client
+            // PostgREST reports 0-row updates as success, so verify the write
+            // actually landed before claiming it did.
+            val updated = SupabaseClient.client
                 .from("appointments").update(mapOf("status" to "CONFIRMED",
                         "confirmed_by" to currentUser.id
                     )
-                ) { filter { eq("id", appointmentId) } }
-            true
+                ) {
+                    filter { eq("id", appointmentId) }
+                    select()
+                }
+                .decodeList<Appointment>()
+            updated.isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
             false
@@ -157,10 +163,14 @@ object GetAppointmentData {
                 put("status", "CANCELLED")
                 notes?.trim()?.takeIf { it.isNotBlank() }?.let { put("notes", it) }
             }
-            SupabaseClient.client
+            val updated = SupabaseClient.client
                 .from("appointments")
-                .update(update) { filter { eq("id", appointmentId) } }
-            true
+                .update(update) {
+                    filter { eq("id", appointmentId) }
+                    select()
+                }
+                .decodeList<Appointment>()
+            updated.isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
             false
@@ -169,12 +179,14 @@ object GetAppointmentData {
 
     suspend fun markNoShow(appointmentId: String): Boolean {
         return try {
-            SupabaseClient.client
+            val updated = SupabaseClient.client
                 .from("appointments")
                 .update(mapOf("status" to "NO_SHOW")) {
                     filter { eq("id", appointmentId) }
+                    select()
                 }
-            true
+                .decodeList<Appointment>()
+            updated.isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
             false
@@ -186,12 +198,14 @@ object GetAppointmentData {
         appointmentId: String
     ): Boolean {
         return try {
-            SupabaseClient.client
+            val updated = SupabaseClient.client
                 .from("appointments")
                 .update(mapOf("status" to "CHECKED_IN")) {
                     filter { eq("id", appointmentId) }
+                    select()
                 }
-            true
+                .decodeList<Appointment>()
+            updated.isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
             false
@@ -206,12 +220,14 @@ object GetAppointmentData {
         appointmentId: String
     ): Boolean {
         return try {
-            SupabaseClient.client
+            val updated = SupabaseClient.client
                 .from("appointments")
                 .update(mapOf("status" to "COMPLETED")) {
                     filter { eq("id", appointmentId) }
+                    select()
                 }
-            true
+                .decodeList<Appointment>()
+            updated.isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
             false
@@ -222,6 +238,10 @@ object GetAppointmentData {
      * Begins treatment for a confinement/surgery appointment at physical check-in.
      * This is the spec-compliant moment a treatment case is created — never at
      * booking or confirmation. Returns the created case, or null on failure.
+     *
+     * Idempotent: reuses the case linked to this appointment (or one already
+     * created for it) so a retry after a partial failure cannot create a
+     * duplicate case.
      */
     suspend fun startTreatment(
         appointmentId: String
@@ -236,22 +256,40 @@ object GetAppointmentData {
             return GetCaseData.getCaseById(caseId)
         }
 
+        // A previous run may have created the case but failed to link it.
+        // Find it by appointment_id instead of creating a duplicate.
+        GetCaseData.getCaseByAppointmentId(appointmentId)?.let { orphan ->
+            if (linkCaseToAppointment(appointmentId, orphan.id)) return orphan
+        }
+
         val treatmentCase = GetCaseData.createCase(
             petId = appointment.pet_id,
             caseType = appointment.appointment_type,
             appointmentId = appointmentId
         ) ?: return null
 
+        if (!linkCaseToAppointment(appointmentId, treatmentCase.id)) return null
+        return treatmentCase
+    }
+
+    /** Links a treatment case to its appointment. Verified — 0-row updates return false. */
+    private suspend fun linkCaseToAppointment(
+        appointmentId: String,
+        caseId: String?
+    ): Boolean {
+        if (caseId.isNullOrBlank()) return false
         return try {
-            SupabaseClient.client
+            val updated = SupabaseClient.client
                 .from("appointments")
-                .update(mapOf("linked_case_id" to treatmentCase.id)) {
+                .update(mapOf("linked_case_id" to caseId)) {
                     filter { eq("id", appointmentId) }
+                    select()
                 }
-            treatmentCase
+                .decodeList<Appointment>()
+            updated.isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            false
         }
     }
 

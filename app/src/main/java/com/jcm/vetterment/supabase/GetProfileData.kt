@@ -132,6 +132,11 @@ object GetProfileData {
             result.decodeAs<String>()
         } catch (e: Exception) {
             e.printStackTrace()
+            if (e.message?.contains("already registered", ignoreCase = true) == true ||
+                e.message?.contains("duplicate key", ignoreCase = true) == true
+            ) {
+                System.err.println("create_staff_account: email already registered")
+            }
             null
         }
     }
@@ -161,12 +166,21 @@ object GetProfileData {
         if (updates.isEmpty()) return Result.failure(IllegalArgumentException("No valid updates provided"))
 
         return try {
-            SupabaseClient.client
+            // PostgREST reports 0-row updates as success, so verify the write
+            // actually landed before claiming it did.
+            val updatedRows = SupabaseClient.client
                 .from("profiles")
                 .update(updates) {
                     filter { eq("id", profileId) }
+                    select()
                 }
-            Result.success(true)
+                .decodeList<Profile>()
+
+            if (updatedRows.isEmpty()) {
+                Result.failure(IllegalStateException("Staff member not found or no permission"))
+            } else {
+                Result.success(true)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             Result.failure(e)
@@ -181,12 +195,16 @@ object GetProfileData {
         if (profileId.isBlank()) return false
 
         return try {
-            SupabaseClient.client
+            // PostgREST reports 0-row deletes as success, so verify the row
+            // was actually removed before claiming it was.
+            val deletedRows = SupabaseClient.client
                 .from("profiles")
                 .delete {
                     filter { eq("id", profileId) }
+                    select()
                 }
-            true
+                .decodeList<Profile>()
+            deletedRows.isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
             false

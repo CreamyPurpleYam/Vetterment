@@ -208,19 +208,28 @@ object GetPetData {
                 "weight" to pet.weight,
                 "known_allergies" to pet.known_allergies?.trim()?.takeIf { it.isNotBlank() },
                 "pre_existing_conditions" to pet.pre_existing_conditions?.trim()?.takeIf { it.isNotBlank() },
-                "photo_url" to pet.photo_url?.trim()?.takeIf { it.isNotBlank() }
+                "photo_url" to pet.photo_url?.trim()?.takeIf { it.isNotBlank() },
+                "is_active" to pet.is_active
             )
 
-            SupabaseClient.client
+            // PostgREST reports 0-row updates as success, so verify the write
+            // actually landed before claiming it did.
+            val updatedRows = SupabaseClient.client
                 .from("pets")
                 .update(updates) {
                     filter {
                         eq("id", petId)
                         eq("owner_id", pet.owner_id)
                     }
+                    select()
                 }
+                .decodeList<Pet>()
 
-            Result.success(true)
+            if (updatedRows.isEmpty()) {
+                Result.failure(IllegalStateException("Pet not found or no longer accessible"))
+            } else {
+                Result.success(true)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             System.err.println("Failed to update pet $petId: ${e.message} | Cause: ${e.cause}")
@@ -238,7 +247,7 @@ object GetPetData {
         }
 
         return try {
-            SupabaseClient.client
+            val updatedRows = SupabaseClient.client
                 .from("pets")
                 .update(
                     mapOf(
@@ -248,8 +257,10 @@ object GetPetData {
                     filter {
                         eq("id", petId)
                     }
+                    select()
                 }
-            true
+                .decodeList<Pet>()
+            updatedRows.isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
             System.err.println("Failed to update pet: ${e.message}")

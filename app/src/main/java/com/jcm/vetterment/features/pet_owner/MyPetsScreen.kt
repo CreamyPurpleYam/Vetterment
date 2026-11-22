@@ -472,6 +472,10 @@ fun PetOwnerPetDetailScreen(petId: String, navController: NavController) {
 
     var isSaving by remember { mutableStateOf(false) }
 
+    var showRemoveDialog by remember { mutableStateOf(false) }
+
+    var isRemoving by remember { mutableStateOf(false) }
+
     val scope = rememberCoroutineScope()
 
 
@@ -584,6 +588,95 @@ fun PetOwnerPetDetailScreen(petId: String, navController: NavController) {
 
 
 
+    // Remove pet — soft delete (is_active = false); records stay with the clinic
+    if (showRemoveDialog && pet != null) {
+
+        AlertDialog(
+
+            onDismissRequest = { if (!isRemoving) showRemoveDialog = false },
+
+            title = { Text("Remove ${pet!!.name}") },
+
+            text = {
+
+                Text("Remove this pet from your profile? The clinic will keep " +
+
+                        "all medical records. This cannot be undone from the app.")
+
+            },
+
+            confirmButton = {
+
+                TextButton(
+
+                    enabled = !isRemoving,
+
+                    onClick = {
+
+                        isRemoving = true
+
+                        scope.launch {
+
+                            try {
+
+                                val petIdToRemove = pet?.id
+
+                                val removed = petIdToRemove != null &&
+
+                                        GetPetData.deactivatePet(petIdToRemove)
+
+                                if (removed) {
+
+                                    showRemoveDialog = false
+
+                                    navController.popBackStack()
+
+                                } else {
+
+                                    errorMessage = "Failed to remove pet. Please try again."
+
+                                    showRemoveDialog = false
+
+                                }
+
+                            } catch (e: Exception) {
+
+                                e.printStackTrace()
+
+                                errorMessage = "Failed to remove pet. Please try again."
+
+                                showRemoveDialog = false
+
+                            } finally {
+
+                                isRemoving = false
+
+                            }
+
+                        }
+
+                    }
+
+                ) { Text("Remove") }
+
+            },
+
+            dismissButton = {
+
+                TextButton(onClick = { showRemoveDialog = false }, enabled = !isRemoving) {
+
+                    Text("Cancel")
+
+                }
+
+            }
+
+        )
+
+    }
+
+
+
     PetOwnerPetDetailContent(
 
         pet = pet,
@@ -601,6 +694,8 @@ fun PetOwnerPetDetailScreen(petId: String, navController: NavController) {
         onBackClick = { navController.popBackStack() },
 
         onEditClick = { showEditDialog = true },
+
+        onRemovePetClick = { showRemoveDialog = true },
 
         onViewAllRecordsClick = {
                 navController.navigate(PetOwnerRoutes.Cases) {
@@ -637,6 +732,8 @@ fun PetOwnerPetDetailContent(
     onBackClick: () -> Unit,
 
     onEditClick: () -> Unit = {},
+
+    onRemovePetClick: () -> Unit = {},
 
     onViewAllRecordsClick: () -> Unit = {}
 
@@ -701,6 +798,7 @@ fun PetOwnerPetDetailContent(
                     cases = cases,
 
                     onEditClick = onEditClick,
+                    onRemovePetClick = onRemovePetClick,
                     onViewAllRecordsClick = onViewAllRecordsClick
 
                 )
@@ -728,6 +826,8 @@ private fun PetOwnerPetDetailBody(
     cases: List<Case>,
 
     onEditClick: () -> Unit,
+
+    onRemovePetClick: () -> Unit = {},
 
     onViewAllRecordsClick: () -> Unit
 
@@ -767,6 +867,14 @@ private fun PetOwnerPetDetailBody(
 
         // Section D: Medication Schedule (Today)
         MedicationScheduleCard(todaysMedications = todaysMedications)
+
+        // Remove pet (soft delete — records stay with the clinic)
+        TextButton(
+            onClick = onRemovePetClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Remove Pet", color = MaterialTheme.colorScheme.error)
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 

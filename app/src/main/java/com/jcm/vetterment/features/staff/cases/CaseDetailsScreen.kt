@@ -51,6 +51,8 @@ fun CaseDetailsScreen(
     val coroutineScope = rememberCoroutineScope()
     var medications by remember { mutableStateOf<List<Medication>>(emptyList()) }
     var showAddMedicationDialog by remember { mutableStateOf(false) }
+    var medicationToDiscontinue by remember { mutableStateOf<Medication?>(null) }
+    var isDiscontinuing by remember { mutableStateOf(false) }
 
     // Initial load — keyed on caseId, not a boolean flag
     LaunchedEffect(caseId) {
@@ -141,7 +143,48 @@ fun CaseDetailsScreen(
         onEditClick = { showEditDialog = true },
         medications = medications,
         onAddMedicationClick = { showAddMedicationDialog = true },
+        onDiscontinueMedicationClick = { medicationToDiscontinue = it },
     )
+
+    if (medicationToDiscontinue != null) {
+        AlertDialog(
+            onDismissRequest = { if (!isDiscontinuing) medicationToDiscontinue = null },
+            title = { Text("Discontinue Medication") },
+            text = {
+                Text(
+                    "Stop \"${medicationToDiscontinue?.name}\" for this case? " +
+                            "It will no longer appear in active medications."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !isDiscontinuing,
+                    onClick = {
+                        isDiscontinuing = true
+                        coroutineScope.launch {
+                            val medicationId = medicationToDiscontinue?.id
+                            val success = medicationId != null &&
+                                    GetMedicationData.deactivateMedication(medicationId)
+                            if (success) {
+                                medications = GetMedicationData.getMedicationsForCase(caseId)
+                                    .filter { it.is_active }
+                            } else {
+                                errorMessage = "Failed to discontinue medication."
+                            }
+                            isDiscontinuing = false
+                            medicationToDiscontinue = null
+                        }
+                    }
+                ) { Text("Discontinue") }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !isDiscontinuing,
+                    onClick = { medicationToDiscontinue = null }
+                ) { Text("Cancel") }
+            }
+        )
+    }
 
     if (showAdvanceDialog) {
         AdvanceStatusDialog(
@@ -176,9 +219,10 @@ fun CaseDetailsScreen(
                     actual_discharge_date = updates.actualDischargeDate
                         ?: case!!.actual_discharge_date
                 )
-                // Persist to Supabase in background
+                // Persist to Supabase in background — a failed save must not
+                // keep looking successful, so re-sync from the database.
                 coroutineScope.launch {
-                    GetCaseData.updateCaseDetails(
+                    val saved = GetCaseData.updateCaseDetails(
                         caseId = caseId,
                         diagnosis = updates.diagnosis,
                         treatmentPlan = updates.treatmentPlan,
@@ -189,6 +233,10 @@ fun CaseDetailsScreen(
                         expectedDischargeDate = updates.expectedDischargeDate,
                         actualDischargeDate = updates.actualDischargeDate
                     )
+                    if (!saved) {
+                        errorMessage = "Failed to save case details."
+                        GetCaseData.getCaseById(caseId)?.let { case = it }
+                    }
                 }
             },
             onDismiss = { showEditDialog = false }
@@ -229,6 +277,7 @@ fun CaseDetailsContent(
     onEditClick: () -> Unit,
     medications: List<Medication>,
     onAddMedicationClick: () -> Unit,
+    onDiscontinueMedicationClick: (Medication) -> Unit,
 ) {
     val isCompleted = case?.current_status in listOf("COMPLETED", "DISCHARGED")
     val isClaimed = case?.assigned_vet_id != null
@@ -300,6 +349,7 @@ fun CaseDetailsContent(
                         onClaimClick = onClaimClick,
                         medications = medications,
                         onAddMedicationClick = onAddMedicationClick,
+                        onDiscontinueMedicationClick = onDiscontinueMedicationClick,
                     )
                 }
             }
@@ -322,6 +372,7 @@ private fun CaseDetailsBody(
     onClaimClick: () -> Unit,
     medications: List<Medication>,
     onAddMedicationClick: () -> Unit,
+    onDiscontinueMedicationClick: (Medication) -> Unit,
 ) {
     val stages = CaseStages.stagesFor(case.case_type)
     val currentIndex = stages.indexOf(case.current_status)
@@ -505,15 +556,20 @@ private fun CaseDetailsBody(
                 TextButton(onClick = onAddMedicationClick) { Text("+ Add") }
             }
         }
-        if (medications.isEmpty()) {
+        if (medications.none { it.is_active }) {
             Text(
                 text = "No medications prescribed.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {
-            medications.forEach { med ->
-                MedicationCard(medication = med)
+            medications.filter { it.is_active }.forEach { med ->
+                MedicationCard(
+                    medication = med,
+                    onDiscontinueClick = if (isClaimed && !isCompleted) {
+                        { onDiscontinueMedicationClick(med) }
+                    } else null
+                )
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
@@ -824,13 +880,25 @@ private fun ProgressEntry(entry: CaseProgress) {
 // ─── Medication card ──────────────────────────────────────────────────────────
 
 @Composable
-private fun MedicationCard(medication: Medication) {
+private fun MedicationCard(
+    medication: Medication,
+    onDiscontinueClick: (() -> Unit)? = null
+) {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(medication.name, style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(medication.name, style = MaterialTheme.typography.titleMedium)
+                if (onDiscontinueClick != null) {
+                    TextButton(onClick = onDiscontinueClick) { Text("Discontinue") }
+                }
+            }
             Text(
                 text = "${medication.dosage} • ${medication.frequency}",
                 style = MaterialTheme.typography.bodySmall,

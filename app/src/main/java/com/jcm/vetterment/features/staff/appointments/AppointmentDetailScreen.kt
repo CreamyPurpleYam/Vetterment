@@ -84,8 +84,22 @@ fun AppointmentDetailScreen(
                 }
                 "CHECK_IN" -> {
                     val success = GetAppointmentData.checkInAppointment(appointmentId)
-                    if (success) appointment = appointment?.copy(status = "CHECKED_IN")
-                    else actionError = "Failed to check in."
+                    if (success) {
+                        appointment = appointment?.copy(status = "CHECKED_IN")
+                        // Treatment starts only at physical check-in — create the
+                        // case now for confinement/surgery stays. Consultations
+                        // never get a case.
+                        if (appointment?.appointment_type in listOf("CONFINEMENT", "SURGERY")) {
+                            val treatmentCase = GetAppointmentData.startTreatment(appointmentId)
+                            if (treatmentCase?.id != null) {
+                                appointment = appointment?.copy(linked_case_id = treatmentCase.id)
+                            } else {
+                                actionError = "Pet checked in, but creating the treatment case failed."
+                            }
+                        }
+                    } else {
+                        actionError = "Failed to check in."
+                    }
                 }
                 "OPEN_CASE" -> {
                     val linkedCase = GetAppointmentData.getLinkedCase(appointmentId)

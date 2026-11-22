@@ -6,6 +6,7 @@ object HeadVetRoutes {
     const val CreateStaffAccount = "head_vet_create_staff"
     const val Patients = "head_vet_patients"
     const val Appointments = "head_vet_appointments"
+    const val Schedules = "head_vet_schedules"
     const val Profile = "head_vet_profile"
 }
 

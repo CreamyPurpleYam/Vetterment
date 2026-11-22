@@ -27,6 +27,7 @@ import com.jcm.vetterment.features.branchmanager.BranchManagerPatientsScreen
 import com.jcm.vetterment.features.branchmanager.BranchManagerProfileScreen
 import com.jcm.vetterment.features.branchmanager.CreateStaffScreen
 import com.jcm.vetterment.features.branchmanager.StaffListScreen
+import com.jcm.vetterment.features.branchmanager.VetSchedulesScreen
 import com.jcm.vetterment.features.pet_owner.BookAppointmentScreen
 import com.jcm.vetterment.features.pet_owner.MyPetsScreen
 import com.jcm.vetterment.features.pet_owner.PetOwner_Dashboard
@@ -173,6 +174,9 @@ fun AppRoot() {
             }
             composable(HeadVetRoutes.CreateStaffAccount) {
                 CreateStaffScreen(navController)
+            }
+            composable(HeadVetRoutes.Schedules) {
+                VetSchedulesScreen(navController)
             }
             composable(HeadVetRoutes.Patients) {
                 BranchManagerPatientsScreen(navController)

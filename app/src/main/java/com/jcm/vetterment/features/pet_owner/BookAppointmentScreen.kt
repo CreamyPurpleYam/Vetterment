@@ -15,9 +15,14 @@ import com.jcm.vetterment.features.components.DatePickerField
 import com.jcm.vetterment.features.components.TimePickerField
 import com.jcm.vetterment.features.data_models.Appointment
 import com.jcm.vetterment.features.data_models.Pet
+import com.jcm.vetterment.features.data_models.Profile
+import com.jcm.vetterment.features.data_models.Roles
+import com.jcm.vetterment.features.data_models.VetSchedule
+import com.jcm.vetterment.features.data_models.VetShifts
 import com.jcm.vetterment.supabase.GetAppointmentData
 import com.jcm.vetterment.supabase.GetPetData
 import com.jcm.vetterment.supabase.GetProfileData
+import com.jcm.vetterment.supabase.GetScheduleData
 import kotlinx.coroutines.launch
 
 // ─── Logic layer ──────────────────────────────────────────────────────────────
@@ -37,6 +42,30 @@ fun BookAppointmentScreen(navController: NavController) {
     var date by remember { mutableStateOf("") }
     var time by remember { mutableStateOf("") }
     var reason by remember { mutableStateOf("") }
+
+    // On-duty roster for the chosen day (informational only)
+    var onDuty by remember { mutableStateOf<List<Pair<Profile, VetSchedule>>>(emptyList()) }
+    var isLoadingDuty by remember { mutableStateOf(false) }
+    var onDutyError by remember { mutableStateOf(false) }
+
+    LaunchedEffect(date) {
+        if (date.isBlank()) {
+            onDuty = emptyList()
+            onDutyError = false
+            return@LaunchedEffect
+        }
+        isLoadingDuty = true
+        onDutyError = false
+        try {
+            onDuty = GetScheduleData.getOnDutyForDate(date.trim())
+        } catch (e: Exception) {
+            e.printStackTrace()
+            onDuty = emptyList()
+            onDutyError = true
+        } finally {
+            isLoadingDuty = false
+        }
+    }
 
     LaunchedEffect(Unit) {
         try {
@@ -61,6 +90,9 @@ fun BookAppointmentScreen(navController: NavController) {
         date = date,
         time = time,
         reason = reason,
+        onDuty = onDuty,
+        isLoadingDuty = isLoadingDuty,
+        onDutyError = onDutyError,
         onPetSelect = { selectedPet = it },
         onDateChange = { date = it },
         onTimeChange = { time = it },
@@ -124,6 +156,9 @@ fun BookAppointmentContent(
     date: String,
     time: String,
     reason: String,
+    onDuty: List<Pair<Profile, VetSchedule>>,
+    isLoadingDuty: Boolean,
+    onDutyError: Boolean,
     onPetSelect: (Pet) -> Unit,
     onDateChange: (String) -> Unit,
     onTimeChange: (String) -> Unit,
@@ -284,6 +319,16 @@ fun BookAppointmentContent(
                 onValueChange = onTimeChange
             )
 
+            // ── Veterinarians on duty (informational) ─────────────────────
+            if (date.isNotBlank()) {
+                OnDutyCard(
+                    date = date,
+                    onDuty = onDuty,
+                    isLoading = isLoadingDuty,
+                    isError = onDutyError
+                )
+            }
+
             // ── Booking Policy Notice ─────────────────────────────────────
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -347,6 +392,100 @@ fun BookAppointmentContent(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+// ─── Functions ────────────────────────────────────────────────────────────────
+
+@Composable
+private fun OnDutyCard(
+    date: String,
+    onDuty: List<Pair<Profile, VetSchedule>>,
+    isLoading: Boolean,
+    isError: Boolean
+) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Veterinarians on Duty — $date",
+                style = MaterialTheme.typography.labelLarge
+            )
+
+            when {
+                isLoading -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Text(
+                            text = "Checking the duty roster…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                isError -> {
+                    Text(
+                        text = "Could not load the duty roster. Your booking request can still be submitted.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                onDuty.isEmpty() -> {
+                    Text(
+                        text = "No vet schedule has been posted for this day yet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                else -> {
+                    onDuty.forEach { (profile, schedule) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = profile.full_name,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = Roles.displayName(profile.role),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = VetShifts.label(schedule.shift),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "${schedule.start_time} – ${schedule.end_time}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider()
+            Text(
+                text = "Walk-ins are accepted 24/7. Cases are handled first-come, first-served — the attending veterinarian is assigned at the clinic.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

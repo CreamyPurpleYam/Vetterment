@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +20,9 @@ import com.jcm.vetterment.features.data_models.Pet
 import com.jcm.vetterment.features.data_models.Profile
 import com.jcm.vetterment.features.staff.cases.CaseStages
 import com.jcm.vetterment.navigation.CaseRoutes
+import com.jcm.vetterment.features.components.DatePickerField
+import com.jcm.vetterment.features.components.TimePickerField
+import com.jcm.vetterment.supabase.GetAppointmentData
 import com.jcm.vetterment.supabase.GetCaseData
 import com.jcm.vetterment.supabase.GetPetData
 import com.jcm.vetterment.supabase.GetProfileData
@@ -38,6 +42,9 @@ fun PetDetailsScreen(
     var errorMessage by remember { mutableStateOf("") }
     var showEditDialog by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
+    var showFollowUpDialog by remember { mutableStateOf(false) }
+    var isSchedulingFollowUp by remember { mutableStateOf(false) }
+    var followUpSuccess by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(petId) {
@@ -58,6 +65,46 @@ fun PetDetailsScreen(
         } finally {
             isLoading = false
         }
+    }
+
+    // Schedule follow-up — vet-initiated consultation from the pet profile
+    if (showFollowUpDialog && pet != null) {
+        ScheduleFollowUpDialog(
+            petName = pet!!.name,
+            isScheduling = isSchedulingFollowUp,
+            onDismiss = {
+                showFollowUpDialog = false
+                followUpSuccess = false
+            },
+            onSchedule = { date, time, reason ->
+                scope.launch {
+                    isSchedulingFollowUp = true
+                    try {
+                        val ownerId = pet?.owner_id
+                        val success = !ownerId.isNullOrBlank() &&
+                                GetAppointmentData.createFollowUpAppointment(
+                                    petId = petId,
+                                    ownerId = ownerId,
+                                    date = date,
+                                    time = time,
+                                    reason = reason
+                                ) != null
+                        if (success) {
+                            followUpSuccess = true
+                        } else {
+                            errorMessage = "Failed to schedule follow-up. Please try again."
+                            showFollowUpDialog = false
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        errorMessage = "Failed to schedule follow-up. Please try again."
+                        showFollowUpDialog = false
+                    } finally {
+                        isSchedulingFollowUp = false
+                    }
+                }
+            }
+        )
     }
 
     if (showEditDialog && pet != null) {
@@ -90,7 +137,11 @@ fun PetDetailsScreen(
         errorMessage = errorMessage,
         onBackClick = { navController.popBackStack() },
         onCaseClick = { it.id?.let { id -> navController.navigate(CaseRoutes.caseDetails(id)) } },
-        onEditClick = { showEditDialog = true }
+        onEditClick = { showEditDialog = true },
+        onFollowUpClick = {
+            followUpSuccess = false
+            showFollowUpDialog = true
+        }
     )
 }
 
@@ -104,7 +155,8 @@ fun PetDetailsContent(
     errorMessage: String,
     onBackClick: () -> Unit,
     onCaseClick: (Case) -> Unit,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    onFollowUpClick: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -120,6 +172,12 @@ fun PetDetailsContent(
                 },
                 actions = {
                     if (pet != null) {
+                        IconButton(onClick = onFollowUpClick) {
+                            Icon(
+                                imageVector = Icons.Default.EventRepeat,
+                                contentDescription = "Schedule Follow-Up"
+                            )
+                        }
                         IconButton(onClick = onEditClick) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
@@ -528,6 +586,87 @@ fun EditPetDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !isSaving) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+// ─── Schedule Follow-Up Dialog for Staff ───────────────────────────────────────
+
+@Composable
+fun ScheduleFollowUpDialog(
+    petName: String,
+    isScheduling: Boolean,
+    onDismiss: () -> Unit,
+    onSchedule: (date: String, time: String, reason: String) -> Unit
+) {
+    var date by remember { mutableStateOf("") }
+    var time by remember { mutableStateOf("") }
+    var reason by remember { mutableStateOf("") }
+    var validationError by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = { if (!isScheduling) onDismiss() },
+        title = { Text("Schedule Follow-Up") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Follow-up checkup for $petName. This is a consultation " +
+                            "only — it does not create a treatment timeline.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (validationError.isNotBlank()) {
+                    Text(validationError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+
+                DatePickerField(
+                    value = date,
+                    label = "Follow-up Date",
+                    onValueChange = { date = it; validationError = "" }
+                )
+
+                TimePickerField(
+                    value = time,
+                    label = "Follow-up Time",
+                    onValueChange = { time = it; validationError = "" }
+                )
+
+                OutlinedTextField(
+                    value = reason,
+                    onValueChange = { reason = it },
+                    label = { Text("Reason (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    when {
+                        date.isBlank() -> validationError = "Please pick a date."
+                        time.isBlank() -> validationError = "Please pick a time."
+                        else -> onSchedule(date, time, reason)
+                    }
+                },
+                enabled = !isScheduling
+            ) {
+                if (isScheduling) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                } else {
+                    Text("Schedule")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isScheduling) {
                 Text("Cancel")
             }
         }

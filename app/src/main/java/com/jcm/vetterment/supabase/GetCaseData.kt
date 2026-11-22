@@ -39,13 +39,20 @@ object GetCaseData {
                 .insert(newCase) { select() }
                 .decodeSingle<Case>()
 
-            // Insert the first progress entry
-            insertProgress(
-                caseId = created.id ?: return null,
-                status = initialStatus,
-                notes = "Case opened.",
-                recordedBy = currentUser.id
-            )
+            // Insert the first progress entry. The case row itself is verified
+            // above, so on progress failure return the case (a null would
+            // invite a duplicate-case retry) and log the gap.
+            val caseId = created.id
+            if (caseId != null &&
+                !insertProgressWithRetry(
+                    caseId = caseId,
+                    status = initialStatus,
+                    notes = "Case opened.",
+                    recordedBy = currentUser.id
+                )
+            ) {
+                System.err.println("Case $caseId created but its initial progress entry could not be saved")
+            }
 
             created
 
@@ -69,6 +76,26 @@ object GetCaseData {
                     filter { eq("id", caseId) }
                 }
                 .decodeSingle<Case>()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    suspend fun getCaseByAppointmentId(
+        appointmentId: String
+    ): Case? {
+        if (appointmentId.isBlank()) return null
+
+        return try {
+            SupabaseClient.client
+                .from("cases")
+                .select {
+                    filter { eq("appointment_id", appointmentId) }
+                    limit(1)
+                }
+                .decodeList<Case>()
+                .firstOrNull()
         } catch (e: Exception) {
             e.printStackTrace()
             null
@@ -146,24 +173,37 @@ object GetCaseData {
             SupabaseClient.client.auth.currentUserOrNull() ?: return null
 
         return try {
-            SupabaseClient.client
+            // PostgREST reports 0-row updates as success, so verify the
+            // status change actually landed before recording it.
+            val updatedRows = SupabaseClient.client
                 .from("cases")
                 .update(mapOf("current_status" to nextStatus)) {
                     filter { eq("id", caseId) }
+                    select()
                 }
+                .decodeList<Case>()
+            if (updatedRows.isEmpty()) return null
 
-            insertProgress(
-                caseId = caseId,
-                status = nextStatus,
-                notes = notes.trim().takeIf { it.isNotBlank() },
-                recordedBy = currentUser.id
-            )
+            if (!insertProgressWithRetry(
+                    caseId = caseId,
+                    status = nextStatus,
+                    notes = notes.trim().takeIf { it.isNotBlank() },
+                    recordedBy = currentUser.id
+                )
+            ) {
+                System.err.println("Case $caseId advanced to $nextStatus but the progress entry could not be saved")
+            }
 
             // Discharge completes the linked appointment (treatment finished)
             if (nextStatus == "DISCHARGED") {
                 currentCase.appointment_id?.let { appointmentId ->
                     try {
-                        GetAppointmentData.completeAppointment(appointmentId)
+                        if (!GetAppointmentData.completeAppointment(appointmentId)) {
+                            // One retry before giving up and logging the gap
+                            if (!GetAppointmentData.completeAppointment(appointmentId)) {
+                                System.err.println("Case $caseId discharged but appointment $appointmentId could not be completed")
+                            }
+                        }
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -205,12 +245,14 @@ object GetCaseData {
         if (updates.isEmpty()) return false
 
         return try {
-            SupabaseClient.client
+            val updatedRows = SupabaseClient.client
                 .from("cases")
                 .update(updates) {
                     filter { eq("id", caseId) }
+                    select()
                 }
-            true
+                .decodeList<Case>()
+            updatedRows.isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
             false
@@ -222,20 +264,19 @@ object GetCaseData {
             ?: return null
 
         return try {
+            // Update with select() and decode the returned rows: an
+            // RLS-blocked or stale claim affects 0 rows and must not be
+            // reported as success.
             SupabaseClient.client
                 .from("cases")
                 .update(
                     mapOf("assigned_vet_id" to user.id)
                 ) {
                     filter { eq("id", caseId) }
+                    select()
                 }
-
-            SupabaseClient.client
-                .from("cases")
-                .select {
-                    filter { eq("id", caseId) }
-                }
-                .decodeSingle<Case>()
+                .decodeList<Case>()
+                .firstOrNull()
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -250,8 +291,8 @@ object GetCaseData {
         status: String,
         notes: String? = null,
         recordedBy: String
-    ) {
-        try {
+    ): Boolean {
+        return try {
             val progress = CaseProgress(
                 case_id = caseId,
                 status = status,
@@ -261,8 +302,21 @@ object GetCaseData {
             SupabaseClient.client
                 .from("case_progress")
                 .insert(progress)
+            true
         } catch (e: Exception) {
             e.printStackTrace()
+            false
         }
+    }
+
+    /** Inserts a progress entry, retrying once before giving up. */
+    private suspend fun insertProgressWithRetry(
+        caseId: String,
+        status: String,
+        notes: String? = null,
+        recordedBy: String
+    ): Boolean {
+        if (insertProgress(caseId, status, notes, recordedBy)) return true
+        return insertProgress(caseId, status, notes, recordedBy)
     }
 }

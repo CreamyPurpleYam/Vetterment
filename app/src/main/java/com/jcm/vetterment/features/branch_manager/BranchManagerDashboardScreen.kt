@@ -88,7 +88,8 @@ fun BranchManagerDashboardScreen(navController: NavController) {
         onViewStaffClick = { navController.navigate(HeadVetRoutes.StaffList) },
         onCreateStaffClick = { navController.navigate(HeadVetRoutes.CreateStaffAccount) },
         onCaseClick = { it.id?.let { id -> navController.navigate(CaseRoutes.caseDetails(id)) } },
-        onViewPatientsClick = { navController.navigate(StaffRoutes.Patients) }
+        onViewPatientsClick = { navController.navigate(StaffRoutes.Patients) },
+        onManageSchedulesClick = { navController.navigate(HeadVetRoutes.Schedules) }
     )
 }
 
@@ -111,7 +112,8 @@ fun BranchManagerDashboardContent(
     onViewStaffClick: () -> Unit,
     onCreateStaffClick: () -> Unit,
     onCaseClick: (Case) -> Unit,
-    onViewPatientsClick: () -> Unit
+    onViewPatientsClick: () -> Unit,
+    onManageSchedulesClick: () -> Unit
 ) {
     BranchManagerScaffold(navController = navController) { innerPadding ->
 
@@ -216,6 +218,12 @@ fun BranchManagerDashboardContent(
                     icon = Icons.Default.MedicalServices,
                     modifier = Modifier.weight(1f),
                     onClick = onViewPatientsClick
+                )
+                QuickActionButton(
+                    label = "Schedules",
+                    icon = Icons.Default.CalendarMonth,
+                    modifier = Modifier.weight(1f),
+                    onClick = onManageSchedulesClick
                 )
             }
 

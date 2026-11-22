@@ -49,12 +49,14 @@ object GetMedicationData {
      */
     suspend fun deactivateMedication(medicationId: String): Boolean {
         return try {
-            SupabaseClient.client
+            val updated = SupabaseClient.client
                 .from("medications")
                 .update(mapOf("is_active" to false)) {
                     filter { eq("id", medicationId) }
+                    select()
                 }
-            true
+                .decodeList<Medication>()
+            updated.isNotEmpty()
         } catch (e: Exception) {
             e.printStackTrace()
             false
